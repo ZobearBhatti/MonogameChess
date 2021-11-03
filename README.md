@@ -1,2 +1,2 @@
 # MonogameChess
-Chess recreated in Monogame. Not complete, AI not yet implemented.
+Chess recreated in Monogame. Not complete, AI not implemented.
