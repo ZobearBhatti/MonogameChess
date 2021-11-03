@@ -20,6 +20,7 @@ namespace Chess
         private Texture2D _pieceTexture;
         private Texture2D _selectedTexture;
         private Texture2D _dotTexture;
+        private Texture2D _circleTexture;
         private SpriteFont _font;
 
         private Piece[,] Board;
@@ -28,8 +29,9 @@ namespace Chess
         private bool _pieceSelected;
         private Vector2 _selectedPiece;
         private byte _selectedPieceType;
-        private byte _selectedPieceColour;  //kinda using bytes to save on mem not much tho thats effort
-        private int _prevYposPawn = -1;
+        private byte _selectedPieceColour;  // kinda using bytes to save on mem not much tho thats effort
+        private Vector2 _prevMoveFrom;
+        private byte _prevPiece;
 
         private List<Vector2> _legalMoves;
 
@@ -64,6 +66,8 @@ namespace Chess
             _pieceSelected = false;
             _prevMouseState = new MouseState();
             _selectedPiece = new Vector2(-1, -1);
+            _prevMoveFrom = new Vector2(-1, -1);
+            _prevPiece = 6;
             _legalMoves = new List<Vector2>();
 
             base.Initialize();
@@ -108,6 +112,7 @@ namespace Chess
 
             _pieceTexture = Content.Load<Texture2D>("Pieces");
             _dotTexture = Content.Load<Texture2D>("Dot");
+            _circleTexture = Content.Load<Texture2D>("Circle");
             _font = Content.Load<SpriteFont>("Font");
             SetUpBoard();
         }
@@ -145,12 +150,6 @@ namespace Chess
                     _selectedPieceColour = (byte)_turn;  // get colour of piece
                     _selectedPieceType = Board[_boardX, _boardY].Type;  //  get piece type
                     _legalMoves = Board[_boardX, _boardY].GenerateLegalMoves(_boardX, _boardY, Board); //gen legal moves
-                    
-                    if (Board[_boardX, _boardY].Type == 5) // if selecting PAWN
-                    {
-                        _prevYposPawn = _boardY;    // save current pawn's y pos
-                        Board[_boardX, _boardY].PrevYPos = _boardY; // save to pawns info
-                    }
                 }
                 else if (_pieceSelected && _legalMoves.Contains(new Vector2(_boardX, _boardY))) // take a piece
                 {
@@ -189,7 +188,9 @@ namespace Chess
             {
                 Board[_boardX, _boardY] = temp; // replace piece
             }
+            _prevPiece = Board[(int)_selectedPiece.X, (int)_selectedPiece.Y].Type; // get old piece type
             Board[(int)_selectedPiece.X, (int)_selectedPiece.Y] = null; // delete old piece
+            _prevMoveFrom = _selectedPiece; // get previous move origin
         }
         private void AfterPieceMove()
         {
@@ -197,7 +198,6 @@ namespace Chess
             _pieceSelected = false; // piece NOT selected
             _selectedPiece = new Vector2(-1, -1);   // no piece selected
             _legalMoves.Clear(); // clear legal moves
-            _prevYposPawn = -1;
         }
 
         protected override void Draw(GameTime gameTime)
@@ -219,15 +219,12 @@ namespace Chess
                 }
             }
 
-            // Highlight selected piece
+            // Highlight selected piece and previous move
             _spriteBatch.Draw(_selectedTexture, new Rectangle((int)_selectedPiece.X * 100, (int)_selectedPiece.Y * 100, 100, 100),
                 Color.Blue * 0.4f);
 
-            // Draw Dot on each legal move
-            foreach (Vector2 pos in _legalMoves)
-            {
-                _spriteBatch.Draw(_dotTexture, new Rectangle((int)pos.X * 100, (int)pos.Y * 100, 100, 100), new Rectangle(0, 0, 200, 200), Color.White);
-            }
+            _spriteBatch.Draw(_selectedTexture, new Rectangle((int)_prevMoveFrom.X * 100, (int)_prevMoveFrom.Y * 100, 100, 100),
+            Color.GreenYellow);
 
             // Draw Pieces
             for (int x = 0; x < 8; x++)
@@ -239,7 +236,21 @@ namespace Chess
                 }
             }
 
-            // Draw Highlight of promoted piece
+            // Draw Dot or Circle on each legal move
+            foreach (Vector2 pos in _legalMoves)
+            {
+                if (Board[(int)pos.X, (int)pos.Y] is Piece)
+                {
+                    _spriteBatch.Draw(_circleTexture, new Rectangle((int)pos.X * 100, (int)pos.Y * 100, 100, 100), new Rectangle(0, 0, 200, 200), Color.White * 0.4f);
+                }
+                else
+                {
+                    _spriteBatch.Draw(_dotTexture, new Rectangle((int)pos.X * 100, (int)pos.Y * 100, 100, 100), new Rectangle(0, 0, 200, 200), Color.White * 0.4f);
+                }
+
+            }
+
+            // Draw Highlight of selected promotion piece
             _spriteBatch.Draw(_selectedTexture, new Rectangle(800, 100 + (_promotionPiece * 100), 100, 100),
                     new Rectangle(_promotionPiece * 200, _turn * 200, 200, 200), Color.BlueViolet * 0.3f);
 
@@ -257,7 +268,9 @@ namespace Chess
                 _spriteBatch.DrawString(_font, "selectedPiece: " + _selectedPiece.ToString(), new Vector2(10, 840), Color.White);
                 _spriteBatch.DrawString(_font, "selectedPieceColour: " + _selectedPieceColour.ToString(), new Vector2(10, 860), Color.White);
                 _spriteBatch.DrawString(_font, "selectedPieceType: " + _selectedPieceType.ToString(), new Vector2(10, 880), Color.White);
-                _spriteBatch.DrawString(_font, "prevYPos: " + _prevYposPawn.ToString(), new Vector2(250, 800), Color.White);
+                _spriteBatch.DrawString(_font, "prevMoveFrom: " + _prevMoveFrom.ToString(), new Vector2(200, 800), Color.White);
+
+                _spriteBatch.DrawString(_font, "prevPiece: " + _prevPiece.ToString(), new Vector2(200, 840), Color.White);
             }
 
             _spriteBatch.End();

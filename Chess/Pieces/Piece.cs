@@ -12,17 +12,15 @@ namespace Chess.Pieces
         private byte _colour;
         private byte _type;
         protected List<Vector2> _legalMoves = new List<Vector2>();
-        private bool _isTaken;
 
         protected Piece[,] _board;
 
         public byte Colour { get { return _colour; } set { _colour = value; } }
         public byte Type { get { return _type; } set { _type = value; } }
-        public int PrevYPos { get; set; }
 
         public Piece(Texture2D texture, byte colour)
         {
-            _texture = texture; _colour = colour; _isTaken = false;
+            _texture = texture; _colour = colour;
         }
 
         public void Update()

@@ -10,7 +10,6 @@ namespace Chess.Pieces
     {
         bool _canEnPassant = false;
         bool _canBeEnPassant = false;
-        public int PrevYPos { get; set; }
 
         public Pawn(Texture2D texture, byte colour) : base(texture, colour)
         {
@@ -42,16 +41,27 @@ namespace Chess.Pieces
                     if (_board[Math.Max(xpos - 1, 0), ypos - 1].Colour != base.Colour)
                     { _legalMoves.Add(new Vector2(xpos - 1, ypos - 1)); }
                 }
-                if (xpos > 0 && ypos == 3) // check en passant left
-                {
-                    if (_board[xpos - 1, ypos] is Pawn && !(_board[xpos-1, ypos-1] is Piece)) // if piece to left is pawn and swuare above is free
-                    {
-                        if (_board[xpos - 1, ypos].PrevYPos == 1) // if piece can be enpassanted
-                        {
-                            _legalMoves.Add(new Vector2(xpos - 1, ypos - 1));
-                        }
-                    }
-                }
+
+                //if (xpos > 0 && ypos == 3) // check en passant left
+                //{
+                //    if (_board[xpos - 1, ypos] is Pawn && !(_board[xpos-1, ypos-1] is Piece)) // if piece to left is pawn and swuare above is free
+                //    {
+                //        if (_board[xpos - 1, ypos].PrevYPos == 1) // if piece can be enpassanted
+                //        {
+                //            _legalMoves.Add(new Vector2(xpos - 1, ypos - 1));
+                //        }
+                //    }
+                //}
+                //if (xpos < 8 && ypos == 3) // check en passant right
+                //{
+                //    if (_board[xpos + 1, ypos] is Pawn && !(_board[xpos + 1, ypos - 1] is Piece)) // if piece to right is pawn and swuare above is free
+                //    {
+                //        if (_board[xpos + 1, ypos].PrevYPos == 1) // if piece can be enpassanted
+                //        {
+                //            _legalMoves.Add(new Vector2(xpos - 1, ypos - 1));
+                //        }
+                //    }
+                //}
             }
             if (base.Colour == 1) // BLACK
             {
