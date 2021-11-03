@@ -37,14 +37,14 @@ namespace Chess.Pieces
                             _legalMoves.Add(new Vector2(xpos + offset.X, ypos + offset.Y)); // add move
                         }
                     }
-                    else
+                    else // if not hit piece
                     {
                         _legalMoves.Add(new Vector2(xpos + offset.X, ypos + offset.Y)); // add move
                     }
                 }
                 catch // if outta bounds
                 {
-                    
+                    // beans
                 }
             }
         }

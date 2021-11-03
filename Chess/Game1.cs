@@ -14,13 +14,14 @@ namespace Chess
 
         #region Variables
 
-        private Color _boardColor1 = new Color(238, 238, 210);
-        private Color _boardColor2 = new Color(118, 150, 86);
+        private Color _boardColor1 = new Color(240, 217, 181);
+        private Color _boardColor2 = new Color(181, 136, 99);
         private Texture2D _boardTexture;
         private Texture2D _pieceTexture;
         private Texture2D _selectedTexture;
         private Texture2D _dotTexture;
         private Texture2D _circleTexture;
+        private Texture2D _squaresTexture;
         private SpriteFont _font;
 
         private Piece[,] Board;
@@ -58,7 +59,7 @@ namespace Chess
             _boardTexture = new Texture2D(GraphicsDevice, 1, 1);
             _boardTexture.SetData<Color>(color);
 
-            color = new Color[] { new Color(Color.White, 100) };
+            color = new Color[] { new Color(205, 210, 106) };
             _selectedTexture = new Texture2D(GraphicsDevice, 1, 1);
             _selectedTexture.SetData<Color>(color);
 
@@ -115,6 +116,7 @@ namespace Chess
             _pieceTexture = Content.Load<Texture2D>("Pieces");
             _dotTexture = Content.Load<Texture2D>("Dot");
             _circleTexture = Content.Load<Texture2D>("Circle");
+            _squaresTexture = Content.Load<Texture2D>("Squares");
             _font = Content.Load<SpriteFont>("Font");
             SetUpBoard();
         }
@@ -191,10 +193,54 @@ namespace Chess
                 Board[_boardX, _boardY] = temp; // replace piece
             }
             _prevPiece = Board[(int)_selectedPiece.X, (int)_selectedPiece.Y].Type; // get old piece type
-            Board[(int)_selectedPiece.X, (int)_selectedPiece.Y] = null; // delete old piece
             _prevMoveFrom = _selectedPiece; // get move origin
             _prevMoveTo = new Vector2(_boardX, _boardY); // get move destination
+
+            EnPassant(_boardX, _boardY);
+            Board[(int)_selectedPiece.X, (int)_selectedPiece.Y] = null; // delete old piece
+            PawnLogic(_boardX, _boardY);
+            Board[_boardX, _boardY].GenerateLegalMoves(_boardX, _boardY, Board);
         }
+
+        private void EnPassant(int _boardX, int _boardY)
+        {
+            if (_prevPiece == 5 && _prevMoveFrom.X != _prevMoveTo.X) // if pawn moved diag and didnt take:
+            {
+                if (Board[(int)_prevMoveTo.X, (int)_prevMoveTo.Y].Colour == 0) // White
+                {
+                    if (Board[(int)_prevMoveTo.X, (int)_prevMoveTo.Y + 1] is Pawn &&
+                        Board[(int)_prevMoveTo.X, (int)_prevMoveTo.Y + 1]._canBeEnPassant)  // if piece below is en passant pawn
+                    {
+                        Board[_boardX, _boardY + 1] = null; // delete piece below
+                    }
+                }
+                else // black
+                {
+                    if (Board[(int)_prevMoveTo.X, (int)_prevMoveTo.Y - 1] is Pawn &&
+                    Board[(int)_prevMoveTo.X, (int)_prevMoveTo.Y - 1]._canBeEnPassant)  // if piece below is en passant pawn
+                    {
+                        Board[_boardX, _boardY - 1] = null; // delete piece above
+                    }
+                }
+            }
+        }
+
+        private void PawnLogic(int x, int y)
+        {
+            foreach (Piece piece in Board)  // clear EnPassant for each pawn
+            {
+                if (piece is Pawn)
+                {
+                    piece._canBeEnPassant = false; // after a move, pawns that COULD be en passanted but havent been can now no longer be
+                }
+            }
+
+            if (_prevPiece == 5 && ((_prevMoveFrom.Y == 1 && _prevMoveTo.Y == 3) || (_prevMoveFrom.Y == 6 && _prevMoveTo.Y == 4)))  // if piece is pawn jumping 2
+            {
+                Board[x, y]._canBeEnPassant = true; // pawn can be en passanted
+            }
+        }
+
         private void AfterPieceMove()
         {
             _turn = 1 - _turn;  // change turn
@@ -224,10 +270,13 @@ namespace Chess
 
             // Highlight selected piece and previous move
             _spriteBatch.Draw(_selectedTexture, new Rectangle((int)_selectedPiece.X * 100, (int)_selectedPiece.Y * 100, 100, 100),
-                Color.Blue * 0.4f);
+                Color.DarkOliveGreen);
 
             _spriteBatch.Draw(_selectedTexture, new Rectangle((int)_prevMoveFrom.X * 100, (int)_prevMoveFrom.Y * 100, 100, 100),
-            Color.GreenYellow);
+            Color.White);
+
+            _spriteBatch.Draw(_selectedTexture, new Rectangle((int)_prevMoveTo.X * 100, (int)_prevMoveTo.Y * 100, 100, 100),
+            Color.White);
 
             // Draw Pieces
             for (int x = 0; x < 8; x++)
@@ -255,7 +304,7 @@ namespace Chess
 
             // Draw Highlight of selected promotion piece
             _spriteBatch.Draw(_selectedTexture, new Rectangle(800, 100 + (_promotionPiece * 100), 100, 100),
-                    new Rectangle(_promotionPiece * 200, _turn * 200, 200, 200), Color.BlueViolet * 0.3f);
+                    new Rectangle(_promotionPiece * 200, _turn * 200, 200, 200), Color.White);
 
             // Draw Promotion Pieces
             for (int i = 1; i <= 4; i++)
@@ -263,6 +312,9 @@ namespace Chess
                 _spriteBatch.Draw(_pieceTexture, new Rectangle(800, 100 + (i * 100), 100, 100),
                     new Rectangle(i * 200, _turn * 200, 200, 200), Color.White);
             }
+
+            // draw square names
+            _spriteBatch.Draw(_squaresTexture, Vector2.Zero, Color.White*0.8f);
 
             // Print Variables
             {

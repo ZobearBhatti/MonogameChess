@@ -8,85 +8,135 @@ namespace Chess.Pieces
 {
     class Pawn : Piece
     {
-        bool _canEnPassant = false;
-        bool _canBeEnPassant = false;
-
         public Pawn(Texture2D texture, byte colour) : base(texture, colour)
         {
             Type = 5;
         }
         protected override void OnGenerateLegalMoves(int xpos, int ypos)
         {
-            if (base.Colour == 0) // WHITE
+            switch (base.Colour)
             {
-                while (true) // GENERATE NORMAL MOVES
-                {
-                    if (_board[xpos, ypos - 1] is Piece) // single move
-                    { break; } else { _legalMoves.Add(new Vector2(xpos, ypos - 1)); }
-
-                    if (ypos == 6)
-                    {
-                        if (!(_board[xpos, ypos - 2] is Piece)) // double move
-                        { _legalMoves.Add(new Vector2(xpos, ypos - 2)); }
-                    }
-                    break;
-                }
-                if (_board[Math.Min(xpos + 1,7), ypos - 1] is Piece && xpos < 7)    // take piece above right
-                {
-                    if (_board[Math.Min(xpos + 1, 7), ypos - 1].Colour != base.Colour)
-                    { _legalMoves.Add(new Vector2(xpos + 1, ypos - 1)); }
-                }
-                if (_board[Math.Max(xpos - 1, 0), ypos - 1] is Piece && xpos > 0)    // take piece above left
-                {
-                    if (_board[Math.Max(xpos - 1, 0), ypos - 1].Colour != base.Colour)
-                    { _legalMoves.Add(new Vector2(xpos - 1, ypos - 1)); }
-                }
-
-                //if (xpos > 0 && ypos == 3) // check en passant left
-                //{
-                //    if (_board[xpos - 1, ypos] is Pawn && !(_board[xpos-1, ypos-1] is Piece)) // if piece to left is pawn and swuare above is free
-                //    {
-                //        if (_board[xpos - 1, ypos].PrevYPos == 1) // if piece can be enpassanted
-                //        {
-                //            _legalMoves.Add(new Vector2(xpos - 1, ypos - 1));
-                //        }
-                //    }
-                //}
-                //if (xpos < 8 && ypos == 3) // check en passant right
-                //{
-                //    if (_board[xpos + 1, ypos] is Pawn && !(_board[xpos + 1, ypos - 1] is Piece)) // if piece to right is pawn and swuare above is free
-                //    {
-                //        if (_board[xpos + 1, ypos].PrevYPos == 1) // if piece can be enpassanted
-                //        {
-                //            _legalMoves.Add(new Vector2(xpos - 1, ypos - 1));
-                //        }
-                //    }
-                //}
+                case 0:
+                    genWhite(xpos, ypos); break;
+                case 1:
+                    genBlack(xpos, ypos); break;
             }
-            if (base.Colour == 1) // BLACK
-            {
-                while (true) // GENERATE NORMAL MOVES
-                {
-                    if (_board[xpos, ypos + 1] is Piece) // single move
-                    { break; }
-                    else { _legalMoves.Add(new Vector2(xpos, ypos + 1)); }
+        }
 
-                    if (ypos == 1)
+        private void genWhite(int xpos, int ypos)
+        {
+            // generate forward movement
+            {
+                if (ypos == 6) // if not moved (able to double move)
+                {
+                    for (int i = 1; i <= 2; i++)    // loop to check square above and square above THAT
                     {
-                        if (!(_board[xpos, ypos + 2] is Piece)) // double move
-                        { _legalMoves.Add(new Vector2(xpos, ypos + 2)); }
+                        if (_board[xpos, ypos - i] is Piece) // if there is a piece above
+                        { break; } // neither move valid, break loop
+                        _legalMoves.Add(new Vector2(xpos, ypos - i)); // if squre unoccupied, add move to list
                     }
-                    break;
                 }
-                if (_board[Math.Min(xpos + 1, 7), ypos + 1] is Piece && xpos < 7)    // take piece below right
+                else // if has moved (unable to double move)
                 {
-                    if (_board[Math.Min(xpos + 1, 7), ypos + 1].Colour != base.Colour)
-                    { _legalMoves.Add(new Vector2(xpos + 1, ypos + 1)); }
+                    if (!(_board[xpos, ypos - 1] is Piece)) // if square above NOT occupied
+                    { _legalMoves.Add(new Vector2(xpos, ypos - 1)); }   // is legal move
                 }
-                if (_board[Math.Max(xpos - 1,0), ypos + 1] is Piece && xpos > 0)    // take piece left
+            }
+
+            // generate taking moves
+            {
+                // take up left
+                if (xpos > 0)   // if not on A file
                 {
-                    if (_board[Math.Max(xpos - 1,0), ypos + 1].Colour != base.Colour)
-                    { _legalMoves.Add(new Vector2(xpos - 1, ypos + 1)); }
+                    if (_board[xpos - 1, ypos - 1] is Piece)    // if square above left is piece
+                    {
+                        if (_board[xpos - 1, ypos - 1].Colour != base.Colour)   // if said piece is opposite colour
+                            _legalMoves.Add(new Vector2(xpos - 1, ypos - 1));   // legal move
+                    }
+                    else if (_board[xpos - 1, ypos] is Pawn && _board[xpos - 1, ypos].Colour != base.Colour)
+                    // if pawn to left:
+                    {
+                        if (_board[xpos - 1, ypos]._canBeEnPassant) // if pawn can be enpassanted
+                        {
+                            _legalMoves.Add(new Vector2(xpos - 1, ypos - 1));   // legal move
+                        }
+                    }
+                }
+
+                // take up right
+                if (xpos < 7)   // if not on H file
+                {
+                    if (_board[xpos + 1, ypos - 1] is Piece)    // if square above right is piece
+                    {
+                        if (_board[xpos + 1, ypos - 1].Colour != base.Colour)   // if said piece is opposite colour
+                            _legalMoves.Add(new Vector2(xpos + 1, ypos - 1));   // legal move
+                    }
+                    else if (_board[xpos + 1, ypos] is Pawn && _board[xpos + 1, ypos].Colour != base.Colour) // if pawn to right:
+                    {
+                        if (_board[xpos + 1, ypos]._canBeEnPassant) // if pawn can be enpassanted
+                        {
+                            _legalMoves.Add(new Vector2(xpos + 1, ypos - 1));   // legal move
+                        }
+                    }
+                }
+            }
+        }
+
+        private void genBlack(int xpos, int ypos)
+        {
+            // generate forward movement
+            {
+                if (ypos == 1) // if not moved (able to double move)
+                {
+                    for (int i = 1; i <= 2; i++)    // loop to check square above and square above THAT
+                    {
+                        if (_board[xpos, ypos + i] is Piece) // if there is a piece above
+                        { break; } // neither move valid, break loop
+                        _legalMoves.Add(new Vector2(xpos, ypos + i)); // if squre unoccupied, add move to list
+                    }
+                }
+                else // if has moved (unable to double move)
+                {
+                    if (!(_board[xpos, ypos + 1] is Piece)) // if square above NOT occupied
+                    { _legalMoves.Add(new Vector2(xpos, ypos + 1)); }   // is legal move
+                }
+            }
+
+            // generate taking moves
+            {
+                // take below left
+                if (xpos > 0)   // if not on A file
+                {
+                    if (_board[xpos - 1, ypos + 1] is Piece)    // if square below left is piece
+                    {
+                        if (_board[xpos - 1, ypos + 1].Colour != base.Colour)   // if said piece is opposite colour
+                            _legalMoves.Add(new Vector2(xpos - 1, ypos + 1));   // legal move
+                    }
+                    else if (_board[xpos - 1, ypos] is Pawn && _board[xpos - 1, ypos].Colour != base.Colour)
+                    // if pawn to left:
+                    {
+                        if (_board[xpos - 1, ypos]._canBeEnPassant) // if pawn can be enpassanted
+                        {
+                            _legalMoves.Add(new Vector2(xpos - 1, ypos + 1));   // legal move
+                        }
+                    }
+                }
+
+                // take below right
+                if (xpos < 7)   // if not on H file
+                {
+                    if (_board[xpos + 1, ypos + 1] is Piece)    // if square above right is piece
+                    {
+                        if (_board[xpos + 1, ypos + 1].Colour != base.Colour)   // if said piece is opposite colour
+                            _legalMoves.Add(new Vector2(xpos + 1, ypos + 1));   // legal move
+                    }
+                    else if (_board[xpos + 1, ypos] is Pawn && _board[xpos + 1, ypos].Colour != base.Colour) // if pawn to right:
+                    {
+                        if (_board[xpos + 1, ypos]._canBeEnPassant) // if pawn can be enpassanted
+                        {
+                            _legalMoves.Add(new Vector2(xpos + 1, ypos + 1));   // legal move
+                        }
+                    }
                 }
             }
         }

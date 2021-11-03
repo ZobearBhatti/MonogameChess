@@ -15,6 +15,8 @@ namespace Chess.Pieces
 
         protected Piece[,] _board;
 
+        public bool _canBeEnPassant;
+
         public byte Colour { get { return _colour; } set { _colour = value; } }
         public byte Type { get { return _type; } set { _type = value; } }
 
