@@ -31,6 +31,7 @@ namespace Chess
         private byte _selectedPieceType;
         private byte _selectedPieceColour;  // kinda using bytes to save on mem not much tho thats effort
         private Vector2 _prevMoveFrom;
+        private Vector2 _prevMoveTo;
         private byte _prevPiece;
 
         private List<Vector2> _legalMoves;
@@ -67,6 +68,7 @@ namespace Chess
             _prevMouseState = new MouseState();
             _selectedPiece = new Vector2(-1, -1);
             _prevMoveFrom = new Vector2(-1, -1);
+            _prevMoveTo = new Vector2(-1, -1);
             _prevPiece = 6;
             _legalMoves = new List<Vector2>();
 
@@ -190,7 +192,8 @@ namespace Chess
             }
             _prevPiece = Board[(int)_selectedPiece.X, (int)_selectedPiece.Y].Type; // get old piece type
             Board[(int)_selectedPiece.X, (int)_selectedPiece.Y] = null; // delete old piece
-            _prevMoveFrom = _selectedPiece; // get previous move origin
+            _prevMoveFrom = _selectedPiece; // get move origin
+            _prevMoveTo = new Vector2(_boardX, _boardY); // get move destination
         }
         private void AfterPieceMove()
         {
@@ -269,7 +272,7 @@ namespace Chess
                 _spriteBatch.DrawString(_font, "selectedPieceColour: " + _selectedPieceColour.ToString(), new Vector2(10, 860), Color.White);
                 _spriteBatch.DrawString(_font, "selectedPieceType: " + _selectedPieceType.ToString(), new Vector2(10, 880), Color.White);
                 _spriteBatch.DrawString(_font, "prevMoveFrom: " + _prevMoveFrom.ToString(), new Vector2(200, 800), Color.White);
-
+                _spriteBatch.DrawString(_font, "prevMoveTo: " + _prevMoveTo.ToString(), new Vector2(200, 820), Color.White);
                 _spriteBatch.DrawString(_font, "prevPiece: " + _prevPiece.ToString(), new Vector2(200, 840), Color.White);
             }
 
