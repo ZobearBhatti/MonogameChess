@@ -45,7 +45,6 @@ namespace Chess.Pieces
             _board = Board;
             _legalMoves.Clear(); // clear list of legal moves
             OnGenerateLegalMoves(x, y, _attackOnly); // generate all legal moves
-
             return _legalMoves;
         }
 

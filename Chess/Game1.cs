@@ -194,6 +194,7 @@ namespace Chess
                     _selectedPieceColour = (byte)_turn;  // get colour of piece
                     _selectedPieceType = Board[_boardX, _boardY].Type;  //  get piece type
                     _legalMoves = Board[_boardX, _boardY].GenerateLegalMoves(Board, false); //gen legal moves
+                    AdjustForCheck();
                 }
                 else if (_pieceSelected && _legalMoves.Contains(new Vector2(_boardX, _boardY))) // take a piece
                 {
@@ -207,6 +208,20 @@ namespace Chess
                 {
                     MovePiece(_boardX, _boardY);
                     AfterPieceMove();
+                }
+            }
+        }
+
+        private void AdjustForCheck()
+        {
+            if (_selectedPieceType == 0) // if king
+            {
+                foreach (Vector2 pos in _legalMoves.ToArray())
+                {
+                    if (_attackMap[(int)pos.X, (int)pos.Y] == 1)
+                    {
+                        _legalMoves.Remove(pos);
+                    }
                 }
             }
         }
@@ -293,7 +308,7 @@ namespace Chess
             _turn = 1 - _turn;  // change turn
             _pieceSelected = false; // piece NOT selected
             _selectedPiece = new Vector2(-1, -1);   // no piece selected
-                        _attackMap = new int[8, 8]; // clear attack map
+            _attackMap = new int[8, 8]; // clear attack map
             GenerateAttacks(1 - _turn);
             _legalMoves.Clear(); // clear legal moves
         }
@@ -328,19 +343,18 @@ namespace Chess
             _spriteBatch.Draw(_selectedTexture, new Rectangle((int)_prevMoveTo.X * 100, (int)_prevMoveTo.Y * 100, 100, 100),
             Color.White);
 
-            // highlight attack map
-            //for (int x = 0; x < 8; x++)
-            //{
-            //    for (int y = 0; y < 8; y++)
-            //    {
-            //        if (_attackMap[x, y] == 1)
-            //        {
-            //            _spriteBatch.Draw(_selectedTexture, new Rectangle(x * 100, y * 100, 100, 100),
-            //            Color.Red * 0.8f);
-            //        }
-
-            //    }
-            //}
+            //      highlight attack map
+            for (int x = 0; x < 8; x++)
+            {
+                for (int y = 0; y < 8; y++)
+                {
+                    if (_attackMap[x, y] == 1)
+                    {
+                        _spriteBatch.Draw(_selectedTexture, new Rectangle(x * 100, y * 100, 100, 100),
+                        Color.Red * 0.8f);
+                    }
+                }
+            }
 
             // Draw Pieces
             foreach (var piece in Board)

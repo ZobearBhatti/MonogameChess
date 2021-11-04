@@ -27,7 +27,8 @@ namespace Chess.Pieces
                     {
                         _legalMoves.Add(new Vector2(xpos - i, ypos - i));   // add position
                     }
-                    break;  //break lol
+                    if (!(_board[xpos - i, ypos - i] is King && _attackOnly)) // dont break if hit the king
+                        break;  //break lol
                 }
 
                 _legalMoves.Add(new Vector2(xpos - i, ypos - i));   // add position
@@ -46,7 +47,8 @@ namespace Chess.Pieces
                     {
                         _legalMoves.Add(new Vector2(xpos + i, ypos - i));   // add position
                     }
-                    break;  //break lol
+                    if (!(_board[xpos + i, ypos - i] is King && _attackOnly)) // dont break if hit the king
+                        break;  //break lol
                 }
 
                 _legalMoves.Add(new Vector2(xpos + i, ypos - i));   // add position
@@ -65,7 +67,8 @@ namespace Chess.Pieces
                     {
                         _legalMoves.Add(new Vector2(xpos - i, ypos + i));   // add position
                     }
-                    break;  //break lol
+                    if (!(_board[xpos - i, ypos + i] is King && _attackOnly)) // dont break if hit the king
+                        break;  //break lol
                 }
 
                 _legalMoves.Add(new Vector2(xpos - i, ypos + i));   // add position
@@ -84,7 +87,8 @@ namespace Chess.Pieces
                     {
                         _legalMoves.Add(new Vector2(xpos + i, ypos + i));   // add position
                     }
-                    break;  //break lol
+                    if (!(_board[xpos + i, ypos + i] is King && _attackOnly)) // dont break if hit the king
+                        break;  //break lol
                 }
 
                 _legalMoves.Add(new Vector2(xpos + i, ypos + i));   // add position
