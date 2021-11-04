@@ -15,7 +15,11 @@ namespace Chess.Pieces
 
         protected Piece[,] _board;
 
+        public int x { get; set; }
+        public int y { get; set; }
+
         public bool _canBeEnPassant;
+        public bool _canCastle;
 
         public byte Colour { get { return _colour; } set { _colour = value; } }
         public byte Type { get { return _type; } set { _type = value; } }
@@ -30,23 +34,29 @@ namespace Chess.Pieces
 
         }
 
-        public void Draw(SpriteBatch _spriteBatch, int x, int y)
+        public void Draw(SpriteBatch _spriteBatch)
         {
             _spriteBatch.Draw(_texture, new Rectangle(x * 100, y * 100, 100, 100),
                 new Rectangle(_type * 200, _colour * 200, 200, 200), Color.White);
         }
 
-        public List<Vector2> GenerateLegalMoves(int x, int y, Piece[,] Board)
+        public List<Vector2> GenerateLegalMoves(Piece[,] Board, bool _attackOnly)
         {
             _board = Board;
-            _legalMoves.Clear();
-            OnGenerateLegalMoves(x, y);
+            _legalMoves.Clear(); // clear list of legal moves
+            OnGenerateLegalMoves(x, y, _attackOnly); // generate all legal moves
+
             return _legalMoves;
         }
 
-        protected virtual void OnGenerateLegalMoves(int xpos, int ypos)
+        protected virtual void OnGenerateLegalMoves(int xpos, int ypos, bool _attackOnly)
         {
             
+        }
+
+        protected bool MoveResultsInCheck(Vector2 move, int xfrom, int yfrom, Piece[,] boardState)
+        {
+            return false;
         }
     }
 }

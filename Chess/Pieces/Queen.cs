@@ -12,7 +12,7 @@ namespace Chess.Pieces
         {
             Type = 1;
         }
-        protected override void OnGenerateLegalMoves(int xpos, int ypos)
+        protected override void OnGenerateLegalMoves(int xpos, int ypos, bool _attackOnly)
         {
             int i = 1;  // up
             while (i < 8)

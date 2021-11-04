@@ -36,11 +36,15 @@ namespace Chess
         private byte _prevPiece;
 
         private List<Vector2> _legalMoves;
+        private int[,] _attackMap;
 
         private MouseState _prevMouseState;
         private MouseState _currentMouseState;
 
         private byte _promotionPiece;
+
+        private bool _isCheck;
+        private bool _isCheckmate;
 
         #endregion
 
@@ -72,6 +76,9 @@ namespace Chess
             _prevMoveTo = new Vector2(-1, -1);
             _prevPiece = 6;
             _legalMoves = new List<Vector2>();
+            _isCheck = false;
+            _isCheckmate = false;
+            _attackMap = new int[8,8];
 
             base.Initialize();
         }
@@ -119,6 +126,22 @@ namespace Chess
             _squaresTexture = Content.Load<Texture2D>("Squares");
             _font = Content.Load<SpriteFont>("Font");
             SetUpBoard();
+            GiveEachPieceItsPosition();
+        }
+
+        private void GiveEachPieceItsPosition() // does what it says on the tin
+        {
+            for (int x = 0; x < 8; x++)
+            {
+                for (int y = 0; y < 8; y++)
+                {
+                    if (Board[x, y] is Piece)
+                    {
+                        Board[x, y].x = x;
+                        Board[x, y].y = y;
+                    }
+                }
+            }
         }
 
         protected override void Update(GameTime gameTime)
@@ -143,6 +166,23 @@ namespace Chess
             base.Update(gameTime);
         }
 
+        private void GenerateAttacks(int attackColour)  // generate every square that can be attacked
+        {
+            foreach (var piece in Board)    // for each piece on the board
+            {
+                if (piece is Piece) // if it is a piece
+                {
+                    if (piece.Colour == attackColour)   // if it is an opp
+                    {
+                        foreach (Vector2 pos in piece.GenerateLegalMoves(Board, true))  
+                        {
+                            _attackMap[(int)pos.X, (int)pos.Y] = 1; // add where it can attack to attackmap
+                        }
+                    }
+                }
+            }
+        }
+
         private void ClickBoard(int _boardX, int _boardY)
         {
             if (Board[_boardX, _boardY] is Piece)   // if selecting piece
@@ -153,7 +193,7 @@ namespace Chess
                     _selectedPiece = new Vector2(_boardX, _boardY); // get position of selected piece
                     _selectedPieceColour = (byte)_turn;  // get colour of piece
                     _selectedPieceType = Board[_boardX, _boardY].Type;  //  get piece type
-                    _legalMoves = Board[_boardX, _boardY].GenerateLegalMoves(_boardX, _boardY, Board); //gen legal moves
+                    _legalMoves = Board[_boardX, _boardY].GenerateLegalMoves(Board, false); //gen legal moves
                 }
                 else if (_pieceSelected && _legalMoves.Contains(new Vector2(_boardX, _boardY))) // take a piece
                 {
@@ -199,7 +239,14 @@ namespace Chess
             EnPassant(_boardX, _boardY);
             Board[(int)_selectedPiece.X, (int)_selectedPiece.Y] = null; // delete old piece
             PawnLogic(_boardX, _boardY);
-            Board[_boardX, _boardY].GenerateLegalMoves(_boardX, _boardY, Board);
+
+            foreach (Vector2 pos in Board[_boardX, _boardY].GenerateLegalMoves(Board, false))
+            {
+                if (Board[(int)pos.X,(int)pos.Y] is King)
+                { _isCheck = true; break; }
+            }
+            Board[_boardX, _boardY].x = _boardX;
+            Board[_boardX, _boardY].y = _boardY;
         }
 
         private void EnPassant(int _boardX, int _boardY)
@@ -246,8 +293,11 @@ namespace Chess
             _turn = 1 - _turn;  // change turn
             _pieceSelected = false; // piece NOT selected
             _selectedPiece = new Vector2(-1, -1);   // no piece selected
+                        _attackMap = new int[8, 8]; // clear attack map
+            GenerateAttacks(1 - _turn);
             _legalMoves.Clear(); // clear legal moves
         }
+
 
         protected override void Draw(GameTime gameTime)
         {
@@ -278,13 +328,26 @@ namespace Chess
             _spriteBatch.Draw(_selectedTexture, new Rectangle((int)_prevMoveTo.X * 100, (int)_prevMoveTo.Y * 100, 100, 100),
             Color.White);
 
+            // highlight attack map
+            //for (int x = 0; x < 8; x++)
+            //{
+            //    for (int y = 0; y < 8; y++)
+            //    {
+            //        if (_attackMap[x, y] == 1)
+            //        {
+            //            _spriteBatch.Draw(_selectedTexture, new Rectangle(x * 100, y * 100, 100, 100),
+            //            Color.Red * 0.8f);
+            //        }
+
+            //    }
+            //}
+
             // Draw Pieces
-            for (int x = 0; x < 8; x++)
+            foreach (var piece in Board)
             {
-                for (int y = 0; y < 8; y++)
+                if (piece is Piece)
                 {
-                    if (Board[x,y] is Piece)
-                    { Board[x, y].Draw(_spriteBatch, x, y); }
+                    piece.Draw(_spriteBatch);
                 }
             }
 
@@ -326,6 +389,16 @@ namespace Chess
                 _spriteBatch.DrawString(_font, "prevMoveFrom: " + _prevMoveFrom.ToString(), new Vector2(200, 800), Color.White);
                 _spriteBatch.DrawString(_font, "prevMoveTo: " + _prevMoveTo.ToString(), new Vector2(200, 820), Color.White);
                 _spriteBatch.DrawString(_font, "prevPiece: " + _prevPiece.ToString(), new Vector2(200, 840), Color.White);
+                _spriteBatch.DrawString(_font, "check: " + _isCheck.ToString(), new Vector2(200, 860), Color.White);
+                _spriteBatch.DrawString(_font, "checkmate: " + _isCheckmate.ToString(), new Vector2(200, 880), Color.White);
+
+                if (_selectedPiece != new Vector2(-1, -1))
+                {
+                    _spriteBatch.DrawString(_font, "x: " + Board[(int)_selectedPiece.X, (int)_selectedPiece.Y].x
+                        .ToString(), new Vector2(400, 800), Color.White);
+                    _spriteBatch.DrawString(_font, "y: " + Board[(int)_selectedPiece.X, (int)_selectedPiece.Y].y
+                        .ToString(), new Vector2(400, 820), Color.White);
+                }
             }
 
             _spriteBatch.End();

@@ -24,7 +24,7 @@ namespace Chess.Pieces
         {
             Type = 0;
         }
-        protected override void OnGenerateLegalMoves(int xpos, int ypos)
+        protected override void OnGenerateLegalMoves(int xpos, int ypos, bool _attackOnly)
         {
             foreach (Vector2 offset in Offsets) // for each possible move
             {
