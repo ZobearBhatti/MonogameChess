@@ -24,7 +24,7 @@ namespace Chess
         private Texture2D _squaresTexture;
         private SpriteFont _font;
 
-        private Piece[,] Board;
+        public Piece[,] Board { get; set; }
 
         private int _turn;
         private bool _pieceSelected;
@@ -344,17 +344,17 @@ namespace Chess
             Color.White);
 
             //      highlight attack map
-            for (int x = 0; x < 8; x++)
-            {
-                for (int y = 0; y < 8; y++)
-                {
-                    if (_attackMap[x, y] == 1)
-                    {
-                        _spriteBatch.Draw(_selectedTexture, new Rectangle(x * 100, y * 100, 100, 100),
-                        Color.Red * 0.8f);
-                    }
-                }
-            }
+            //for (int x = 0; x < 8; x++)
+            //{
+            //    for (int y = 0; y < 8; y++)
+            //    {
+            //        if (_attackMap[x, y] == 1)
+            //        {
+            //            _spriteBatch.Draw(_selectedTexture, new Rectangle(x * 100, y * 100, 100, 100),
+            //            Color.Red * 0.8f);
+            //        }
+            //    }
+            //}
 
             // Draw Pieces
             foreach (var piece in Board)
