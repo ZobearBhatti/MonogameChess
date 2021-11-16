@@ -27,7 +27,7 @@ namespace ChessV2.Pieces
                 int Xo = Offsets[0, i]; int Yo = Offsets[1, i];
                 if (X + Xo >= 0 && X + Xo < 8 && Y + Yo >= 0 && Y + Yo < 8)
                 {
-                    if (Board[X + Xo, Y + Yo].Piece != null)
+                    if (Board[X + Xo, Y + Yo].ContainsPiece())
                     {
                         if (Board[X + Xo, Y + Yo].Piece.Colour == base.Colour)
                         {

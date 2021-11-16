@@ -18,9 +18,11 @@ namespace ChessV2.Pieces
         // Piece specific stuff
         public bool CanBeEnPassant { get; set; }
 
+        public bool CanCastle { get; set; }
+
         public Piece(int colour)
         {
-            Colour = colour; LegalMoves = new List<Move>();
+            Colour = colour; LegalMoves = new List<Move>(); CanCastle = false;
         }
 
         public virtual void GenerateLegalMoves(Square[,] Board)

@@ -141,10 +141,5 @@ namespace ChessV2.Pieces
                 LegalMoves = simulator.FilterMoves(LegalMoves, Board, base.Colour);
             }
         }
-
-        public override void GenerateAttacks()
-        {
-            
-        }
     }
 }

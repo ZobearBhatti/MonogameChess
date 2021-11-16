@@ -6,17 +6,21 @@ namespace ChessV2.Pieces
 {
     public class Rook : Piece
     {
-        public bool CanCastle { get; set; }
         public Rook(int colour) : base(colour)
         {
             base.Type = 4; CanCastle = true;
         }
 
+        public Rook(int colour, bool CanCastle) : base(colour)
+        {
+            base.Type = 4; CanCastle = false;
+        }
+
         public override void GenerateLegalMoves(Square[,] Board)
         {
             LegalMoves.Clear();
-            int X = base.File; int Y = base.Rank;    
-            
+            int X = base.File; int Y = base.Rank;
+
             // left
             for (int i = X - 1; i >= 0; i--) // for each piece to the left
             {
@@ -61,11 +65,6 @@ namespace ChessV2.Pieces
             {
                 LegalMoves = simulator.FilterMoves(LegalMoves, Board, base.Colour);
             }
-        }
-
-        public override void GenerateAttacks()
-        {
-
         }
     }
 }

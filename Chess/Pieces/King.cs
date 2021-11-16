@@ -48,10 +48,5 @@ namespace Chess.Pieces
                 }
             }
         }
-
-        public void GenerateCheck()
-        {
-
-        }
     }
 }

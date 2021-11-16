@@ -32,20 +32,23 @@ namespace ChessV2
         public int _turn; // who go it be
 
         private List<Explosion> Explosions;
-        // display variable
 
+
+        // display variable
         private string _prevMove = "";
+        private List<string> _moveHistory;
 
         // mouse processing
         private MouseState _prevMouseState;
         private MouseState _currentMouseState;
+
 
         #endregion
 
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
-            _graphics.PreferredBackBufferWidth = 800;
+            _graphics.PreferredBackBufferWidth = 1000;
             _graphics.PreferredBackBufferHeight = 1000;
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
@@ -55,6 +58,7 @@ namespace ChessV2
         {
             board = new Board();
             Explosions = new List<Explosion>();
+            _moveHistory = new List<string>();
             base.Initialize();
         }
 
@@ -139,7 +143,7 @@ namespace ChessV2
         private void TryMove(int X, int Y)
         {
             // if a piece is selected and move is on board
-            if (board.selectedSquare.Piece != null && X >= 0 && X < 8 && Y >= 0 && Y < 8)
+            if (board.selectedSquare.ContainsPiece() && X >= 0 && X < 8 && Y >= 0 && Y < 8)
             {
                 foreach (Move move in board.selectedSquare.Piece.LegalMoves)    // foreach legal move of piece
                 {
@@ -150,6 +154,7 @@ namespace ChessV2
                             board.MovePieceEnPassant(move, move.EnPassantType);
                             _turn = 1 - _turn;
                             _prevMove = move.MoveName;
+                            _moveHistory.Add(_prevMove);
                             Explosions.Add(new Explosion(_explosionTexture, 
                                 move.XFrom + ((move.EnPassantType == 1) ? -1 : 1), move.YFrom));
 
@@ -162,6 +167,7 @@ namespace ChessV2
                             board.MovePiece(move); // move
                             _turn = 1 - _turn;
                             _prevMove = move.MoveName;
+                            _moveHistory.Add(_prevMove);
                             break;
                         }
                     }
@@ -176,11 +182,12 @@ namespace ChessV2
             _spriteBatch.Begin();
             // ====================================
 
+            // does what it says on the tin tbh
             DrawSquares();
             DrawSelectedPiece();
             DrawCheckSquare();
             DrawPrevMove();
-            DrawCurrentPieceAttacks();
+            DrawLegalMoves();
             DrawPieces();
             DrawVariables();
             DrawExplosions();
@@ -190,36 +197,36 @@ namespace ChessV2
 
             base.Draw(gameTime);
         }
-        private void DrawSquares()
+        private void DrawSquares()  // method to draw chess board
         {
-            for (int x = 0; x < 8; x++)
+            for (int x = 0; x < 8; x++) // for each column
             {
-                for (int y = 0; y < 8; y++)
+                for (int y = 0; y < 8; y++) // for each row
                 {
-                    if ((x + y) % 2 == 0)
+                    if ((x + y) % 2 == 0)   // if x + y is a multiple of 2 (every other square)
                     {
                         _spriteBatch.Draw(_boardTexture, new Vector2(x * 100, y * 100),
-                            new Rectangle(0, 0, 100, 100), Color.White);
-                    }
+                            new Rectangle(0, 0, 100, 100), Color.White);    // draw square
+                    }   
                 }
             }
-            _spriteBatch.Draw(_squaresTexture, Vector2.Zero, Color.White * 0.8f);
         }
 
-        private void DrawSelectedPiece()
+        private void DrawSelectedPiece()    // method to highlight selected piece
         {
-            if (board.selectedSquare != null)
+            if (board.selectedSquare != null)   // if a square has been selected
             {
                 var x = board.selectedSquare.File;
                 var y = board.selectedSquare.Rank;
                 _spriteBatch.Draw(_selectedTexture, new Rectangle(x * 100, y * 100, 100, 100),
-                Color.DarkOliveGreen);
+                Color.DarkOliveGreen);  // highlight selected piece
             }
         }
-        public void DrawCheckSquare()
+        public void DrawCheckSquare()   // method to highlight a king in check
         {
-            (int X, int Y) = board.checkSquare;
-            _spriteBatch.Draw(_selectedTexture, new Rectangle(X * 100, Y * 100, 100, 100), Color.Red);
+            (int X, int Y) = board.checkSquare; // get position of king in check
+            _spriteBatch.Draw(_selectedTexture, new Rectangle(X * 100, Y * 100, 100, 100), Color.Red); 
+            // draw red square
         }
 
         public void DrawPrevMove()
@@ -230,15 +237,15 @@ namespace ChessV2
             _spriteBatch.Draw(_selectedTexture, new Rectangle(XT * 100, YT * 100, 100, 100), Color.White);
         }
 
-        private void DrawCurrentPieceAttacks()
+        private void DrawLegalMoves()  // method to draw legal moves for selected piece
         {
-            if (board.selectedSquare != null)
+            if (board.selectedSquare != null) // if a piece has even been selected
             {
-                if (board.selectedSquare.Piece != null)
+                if (board.selectedSquare.ContainsPiece()) // if the square selected has a piece in it
                 {
-                    foreach(Move move in board.selectedSquare.Piece.LegalMoves)
+                    foreach(Move move in board.selectedSquare.Piece.LegalMoves) // for each of said pieces legal moves
                     {
-                        if (move.SquareTo.ContainsPiece())
+                        if (move.SquareTo.ContainsPiece())  // if move is a taking move, draw circle, else, draw dot
                         {
                             _spriteBatch.Draw(_circleTexture, new Rectangle(move.XTo * 100, move.YTo * 100, 100, 100),
                                 new Rectangle(0, 0, 200, 200), Color.White);
@@ -253,53 +260,61 @@ namespace ChessV2
             }
         }
 
-        private void DrawPieces()
-        {
-            foreach(Square square in board.Squares)
+        private void DrawPieces()   // method to draw eac hpiece present on the board
+        {   
+            foreach(Square square in board.Squares) // for every position on the board
             {
-                if (square.Piece != null)
+                if (square.ContainsPiece())   // if it contains a piece
                 {
-                    (var x, var y) = square.GetPosition();
-                    var _type = square.Piece.Type;
-                    var _colour = square.Piece.Colour;
+                    (var x, var y) = square.GetPosition();  // get its x y position
+                    var _type = square.Piece.Type;  // get piece type
+                    var _colour = square.Piece.Colour;  // get piece colour
                     _spriteBatch.Draw(_pieceTexture, new Rectangle(x * 100, y * 100, 100, 100),
                     new Rectangle(_type * 200, _colour * 200, 200, 200), Color.White);
+                    // draw piece
                 }
             }
         }
 
         private void DrawVariables()
         {
-            if (board.selectedSquare != null)
+            // OLD
+            //{
+            //    if (board.selectedSquare != null)
+            //    {
+            //        if (board.selectedSquare.ContainsPiece())
+            //        {
+
+            //            _spriteBatch.DrawString(_font, "File: " +
+            //                board.selectedSquare.Piece.File.ToString(), new Vector2(0, 820), Color.White);
+
+            //            _spriteBatch.DrawString(_font, "Rank: " +
+            //                board.selectedSquare.Piece.Rank.ToString(), new Vector2(0, 840), Color.White);
+
+            //            _spriteBatch.DrawString(_font, "CBEP: " +
+            //                board.selectedSquare.Piece.CanBeEnPassant.ToString(), new Vector2(0, 860), Color.White);
+
+            //            _spriteBatch.DrawString(_font, "Can Castle: " +
+            //                board.selectedSquare.Piece.CanCastle.ToString(), new Vector2(300, 880), Color.White);
+            //        }
+            //    }
+            //    _spriteBatch.DrawString(_font, "Prev Move: " +
+            //        _prevMove, new Vector2(0, 880), Color.White);
+
+            //    _spriteBatch.DrawString(_font, "Check: " +
+            //        board.Check.ToString(), new Vector2(300, 800), Color.White);
+
+            //    _spriteBatch.DrawString(_font, "Mate: " +
+            //        board.Mate.ToString(), new Vector2(300, 820), Color.White);
+            //} 
+
+            for (int i = 0; i < _moveHistory.Count; i++)
             {
-                if (board.selectedSquare.Piece != null)
-                {
-                    //_spriteBatch.DrawString(_font,
-                    //    board.selectedSquare.Piece.LegalMoves.ToString(),
-                    //    new Vector2(0, 800), Color.White);
-
-                    _spriteBatch.DrawString(_font, "File: " +
-                        board.selectedSquare.Piece.File.ToString(), new Vector2(0, 820), Color.White);
-
-                    _spriteBatch.DrawString(_font, "Rank: " +
-                        board.selectedSquare.Piece.Rank.ToString(), new Vector2(0, 840), Color.White);
-
-                    _spriteBatch.DrawString(_font, "CBEP: " +
-                        board.selectedSquare.Piece.CanBeEnPassant.ToString(), new Vector2(0, 860), Color.White);
-                }
+                _spriteBatch.DrawString(_font, _moveHistory[i], new Vector2(
+                    810 + ((i % 2) * 90), 10 + ((i / 2) * 30)), (i % 2 == 0) ? Color.White : Color.Black);
             }
-            _spriteBatch.DrawString(_font, "Prev Move: " +
-                _prevMove, new Vector2(0, 880), Color.White);
-
-            _spriteBatch.DrawString(_font, "Check: " +
-                board.Check.ToString(), new Vector2(300, 800), Color.White);
-
-            _spriteBatch.DrawString(_font, "Mate: " +
-                board.Mate.ToString(), new Vector2(300, 820), Color.White);
-
-
         }
-        private void DrawExplosions()
+        private void DrawExplosions()   // does exactly what it says on the tin
         {
             foreach (var Explosion in Explosions)
             {

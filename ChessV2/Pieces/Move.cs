@@ -14,6 +14,7 @@ namespace ChessV2
         public int XTo { get; set; }
         public int YTo { get; set; }
         public int EnPassantType { get; set; }
+        public bool IsCastle { get; set; }
         public string MoveName { get; set; }
 
         private Square[,] board;
@@ -26,6 +27,7 @@ namespace ChessV2
             XTo = FileTo; YTo = RankTo;
             EnPassantType = 0;
             board = Board;
+            IsCastle = false;
             MoveName = ConvertToText();
         }
 
@@ -37,7 +39,20 @@ namespace ChessV2
             XTo = FileTo; YTo = RankTo;
             EnPassantType = enPassantType;
             board = Board;
+            IsCastle = false;
             MoveName = ConvertToText();
+        }
+
+        public Move(int FileFrom, int RankFrom, int FileTo, int RankTo, Square[,] Board, bool temp)
+        {
+            SquareFrom = Board[FileFrom, RankFrom];
+            SquareTo = Board[FileTo, RankTo];
+            XFrom = FileFrom; YFrom = RankFrom;
+            XTo = FileTo; YTo = RankTo;
+            EnPassantType = 0;
+            board = Board;
+            IsCastle = true;
+            MoveName = (FileTo < 4) ? "O-O-O" : "O-O";
         }
 
         public void SimulateMove()
@@ -99,7 +114,6 @@ namespace ChessV2
                 case 7: Return += "h"; break;
             }
             Return += (8 - YTo).ToString();
-
 
             return Return;
         }

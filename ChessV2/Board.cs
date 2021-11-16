@@ -61,8 +61,11 @@ namespace ChessV2
             Squares[2, 7].AddPiece(new Bishop(0)); Squares[5, 7].AddPiece(new Bishop(0));
 
             // kings, queens
-            Squares[3, 0].AddPiece(new Queen(1)); Squares[4, 0].AddPiece(new King(1));
-            Squares[3, 7].AddPiece(new Queen(0)); Squares[4, 7].AddPiece(new King(0));
+            Squares[3, 0].AddPiece(new Queen(1));   // bq
+            Squares[4, 0].AddPiece(new King(1));    // bk
+            Squares[3, 7].AddPiece(new Queen(0));   // wq
+            Squares[4, 7].AddPiece(new King(0));    // wk
+
         }
 
         public Square GetSquare(int file, int rank)
@@ -72,7 +75,7 @@ namespace ChessV2
 
         public void SelectSquare(int x, int y, int colour)
         {
-            if (Squares[x, y].Piece != null)
+            if (Squares[x, y].ContainsPiece())
             {
                 if (Squares[x, y].Piece.Colour == colour)
                 {
@@ -92,13 +95,13 @@ namespace ChessV2
 
             // if move is a pawn jumping 2 ranks
             if (To.Piece is Pawn &&
-                ((From.Rank == 1 && To.Rank == 3) || (From.Rank == 7 && To.Rank == 5)))
+                ((From.Rank == 1 && To.Rank == 3) || (From.Rank == 6 && To.Rank == 4)))
             {
                 To.Piece.CanBeEnPassant = true;
             }
 
             // if piece is promoting
-            if (To.Piece is Pawn && (To.Rank == 0 || To.Rank == 7))
+            else if (To.Piece is Pawn && (To.Rank == 0 || To.Rank == 7))
             {
                 int c = To.Piece.Colour;
 
@@ -107,6 +110,26 @@ namespace ChessV2
 
                 Squares[To.File, To.Rank].AddPiece(new Queen(c));
             }
+
+            else if (To.Piece is King && move.IsCastle) // CASTLING
+            {
+                if (To.File > 4) // right side
+                {
+                    Squares[5, To.Rank].AddPiece(new Rook(To.Piece.Colour));
+                    Squares[7, To.Rank].RemovePiece();
+                }
+                else // left side
+                {
+                    Squares[3, To.Rank].AddPiece(new Rook(To.Piece.Colour));
+                    Squares[0, To.Rank].RemovePiece();
+                }
+            }
+
+            else if (To.Piece is King || To.Piece is Rook)  // if a king or pawn is moving
+            {
+                To.Piece.CanCastle = false;
+            }
+
 
             prevSquareFrom = (move.SquareFrom.File, move.SquareFrom.Rank);
             prevSquareTo = (move.SquareTo.File, move.SquareTo.Rank);
@@ -141,9 +164,10 @@ namespace ChessV2
                         {
                             checkSquare = (square.File, square.Rank);
                             _check = true;
+                            move.MoveName += "+";
                             foreach (Square sq in Squares)
                             {
-                                if (sq.Piece != null)
+                                if (sq.ContainsPiece())
                                 {
                                     if (sq.Piece.Colour != To.Piece.Colour)
                                     {
