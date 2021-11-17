@@ -24,6 +24,7 @@ namespace ChessV2
         private Texture2D _circleTexture;
         private Texture2D _squaresTexture;
         private Texture2D _explosionTexture;
+        private Texture2D _windowTexture;
         private SpriteFont _font;
         private SoundEffect _boom;
 
@@ -42,6 +43,7 @@ namespace ChessV2
         private MouseState _prevMouseState;
         private MouseState _currentMouseState;
 
+        private WinWindow winWindow;
 
         #endregion
 
@@ -71,6 +73,7 @@ namespace ChessV2
             _circleTexture = Content.Load<Texture2D>("Circle");
             _squaresTexture = Content.Load<Texture2D>("Squares");
             _explosionTexture = Content.Load<Texture2D>("Explosion");
+            _windowTexture = Content.Load<Texture2D>("Window");
             _font = Content.Load<SpriteFont>("Font");
             _boom = Content.Load<SoundEffect>("Boom");
 
@@ -81,11 +84,13 @@ namespace ChessV2
             color = new Color[] { new Color(205, 210, 106) };
             _selectedTexture = new Texture2D(GraphicsDevice, 1, 1);
             _selectedTexture.SetData<Color>(color);
+
+
         }
 
         protected override void Update(GameTime gameTime)
         {
-            if (!board.Mate) // noone die yet
+            if (!board.Mate && !board.Stalemate) // noone die yet
             {
                 ProcessMouse(); // does what it says on the tin
                 foreach (var Explosion in Explosions)   // update explosion/s
@@ -94,6 +99,27 @@ namespace ChessV2
                     if (Explosion.IsDisposed)
                     { Explosions.Remove(Explosion); break; }
                 }
+            }
+            else // someone won lmao
+            {
+                if (winWindow == null)
+                {
+                    if (board.Mate) // someone WON
+                    {
+                        winWindow = new WinWindow((((_turn == 0) ? "White" : "Black") + " Wins!"),
+                            _windowTexture, _font);
+                    }
+                    else // stalemate
+                    {
+                        winWindow = new WinWindow(("Stalemate by " + board.GetStaleMateType()),
+                            _windowTexture, _font);
+                    }
+                }
+            }
+
+            if (winWindow != null)
+            {
+                winWindow.Update(gameTime);
             }
 
             base.Update(gameTime);
@@ -191,12 +217,14 @@ namespace ChessV2
             DrawPieces();
             DrawVariables();
             DrawExplosions();
+            DrawWinWindow();
 
             // ====================================
             _spriteBatch.End();
 
             base.Draw(gameTime);
         }
+
         private void DrawSquares()  // method to draw chess board
         {
             for (int x = 0; x < 8; x++) // for each column
@@ -210,6 +238,7 @@ namespace ChessV2
                     }   
                 }
             }
+            _spriteBatch.Draw(_squaresTexture, Vector2.Zero, Color.White);
         }
 
         private void DrawSelectedPiece()    // method to highlight selected piece
@@ -304,16 +333,36 @@ namespace ChessV2
             //    _spriteBatch.DrawString(_font, "Check: " +
             //        board.Check.ToString(), new Vector2(300, 800), Color.White);
 
-            //    _spriteBatch.DrawString(_font, "Mate: " +
-            //        board.Mate.ToString(), new Vector2(300, 820), Color.White);
+            _spriteBatch.DrawString(_font, "SM: " +
+                board.Stalemate.ToString(), new Vector2(300, 820), Color.White);
             //} 
+
+            DrawMoveHistory();
+        }
+
+        private void DrawMoveHistory()
+        {
+            int W = _graphics.PreferredBackBufferWidth;
+            int H = _graphics.PreferredBackBufferHeight;
+
+            int x = _moveHistory.Count / 66; // 66 moves displayed on each column
+
+            while (W < (1000) + (x * 200))
+            {
+                _graphics.PreferredBackBufferWidth += 200;
+                _graphics.ApplyChanges();
+                W = _graphics.PreferredBackBufferWidth;
+            }
 
             for (int i = 0; i < _moveHistory.Count; i++)
             {
                 _spriteBatch.DrawString(_font, _moveHistory[i], new Vector2(
-                    810 + ((i % 2) * 90), 10 + ((i / 2) * 30)), (i % 2 == 0) ? Color.White : Color.Black);
+                    810 + ((i / 66) * 200) + ((i % 2) * 90),
+                    ((i % 66) / 2) * 30),
+                    (i % 2 == 0) ? Color.White : Color.Black); // color line
             }
         }
+
         private void DrawExplosions()   // does exactly what it says on the tin
         {
             foreach (var Explosion in Explosions)
@@ -321,5 +370,14 @@ namespace ChessV2
                 Explosion.Draw(_spriteBatch);
             }
         }
+
+        private void DrawWinWindow() // draws the popup window when someone wins
+        {
+            if (winWindow != null)
+            {
+                winWindow.Draw(_spriteBatch);
+            }
+        }
+
     }
 }

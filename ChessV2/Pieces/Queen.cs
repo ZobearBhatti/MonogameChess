@@ -20,9 +20,9 @@ namespace ChessV2.Pieces
             for (int i = X - 1; i >= 0; i--) // for each piece to the left
             {
                 if (Board[i, Y].Piece == null)  // if empty, add move
-                { LegalMoves.Add(new Move(X, Y, i, Y, Board)); }
+                { LegalMoves.Add(new Move(X, Y, i, Y, Board, 0, false)); }
                 else if (Board[i, Y].Piece.Colour != base.Colour)   // if an opp, add move and break
-                { LegalMoves.Add(new Move(X, Y, i, Y, Board)); break; }
+                { LegalMoves.Add(new Move(X, Y, i, Y, Board, 0, false)); break; }
                 else { break; }
             }
 
@@ -30,9 +30,9 @@ namespace ChessV2.Pieces
             for (int i = X + 1; i < 8; i++) // for each piece to the right
             {
                 if (Board[i, Y].Piece == null)  // if empty, add move
-                { LegalMoves.Add(new Move(X, Y, i, Y, Board)); }
+                { LegalMoves.Add(new Move(X, Y, i, Y, Board, 0, false)); }
                 else if (Board[i, Y].Piece.Colour != base.Colour)   // if an opp, add move and break
-                { LegalMoves.Add(new Move(X, Y, i, Y, Board)); break; }
+                { LegalMoves.Add(new Move(X, Y, i, Y, Board, 0, false)); break; }
                 else { break; }
             }
 
@@ -40,9 +40,9 @@ namespace ChessV2.Pieces
             for (int i = Y - 1; i >= 0; i--) // for each piece to the right
             {
                 if (Board[X, i].Piece == null)  // if empty, add move
-                { LegalMoves.Add(new Move(X, Y, X, i, Board)); }
+                { LegalMoves.Add(new Move(X, Y, X, i, Board, 0, false)); }
                 else if (Board[X, i].Piece.Colour != base.Colour)   // if an opp, add move and break
-                { LegalMoves.Add(new Move(X, Y, X, i, Board)); break; }
+                { LegalMoves.Add(new Move(X, Y, X, i, Board, 0, false)); break; }
                 else { break; }
             }
 
@@ -50,9 +50,9 @@ namespace ChessV2.Pieces
             for (int i = Y + 1; i < 8; i++) // for each piece to the right
             {
                 if (Board[X, i].Piece == null)  // if empty, add move
-                { LegalMoves.Add(new Move(X, Y, X, i, Board)); }
+                { LegalMoves.Add(new Move(X, Y, X, i, Board, 0, false)); }
                 else if (Board[X, i].Piece.Colour != base.Colour)   // if an opp, add move and break
-                { LegalMoves.Add(new Move(X, Y, X, i, Board)); break; }
+                { LegalMoves.Add(new Move(X, Y, X, i, Board, 0, false)); break; }
                 else { break; }
             }
 
@@ -60,9 +60,9 @@ namespace ChessV2.Pieces
             for (int i = 1; i <= Math.Min(X, Y); i++)
             {
                 if (Board[X - i, Y - i].Piece == null)  // if empty, add move
-                { LegalMoves.Add(new Move(X, Y, X - i, Y - i, Board)); }
+                { LegalMoves.Add(new Move(X, Y, X - i, Y - i, Board, 0, false)); }
                 else if (Board[X - i, Y - i].Piece.Colour != base.Colour)   // if an opp, add move and break
-                { LegalMoves.Add(new Move(X, Y, X - i, Y - i, Board)); break; }
+                { LegalMoves.Add(new Move(X, Y, X - i, Y - i, Board, 0, false)); break; }
                 else { break; }
             }
 
@@ -70,9 +70,9 @@ namespace ChessV2.Pieces
             for (int i = 1; i <= Math.Min(7 - X, Y); i++)
             {
                 if (Board[X + i, Y - i].Piece == null)  // if empty, add move
-                { LegalMoves.Add(new Move(X, Y, X + i, Y - i, Board)); }
+                { LegalMoves.Add(new Move(X, Y, X + i, Y - i, Board, 0, false)); }
                 else if (Board[X + i, Y - i].Piece.Colour != base.Colour)   // if an opp, add move and break
-                { LegalMoves.Add(new Move(X, Y, X + i, Y - i, Board)); break; }
+                { LegalMoves.Add(new Move(X, Y, X + i, Y - i, Board, 0, false)); break; }
                 else { break; }
             }
 
@@ -80,9 +80,9 @@ namespace ChessV2.Pieces
             for (int i = 1; i <= Math.Min(X, 7 - Y); i++)
             {
                 if (Board[X - i, Y + i].Piece == null)  // if empty, add move
-                { LegalMoves.Add(new Move(X, Y, X - i, Y + i, Board)); }
+                { LegalMoves.Add(new Move(X, Y, X - i, Y + i, Board, 0, false)); }
                 else if (Board[X - i, Y + i].Piece.Colour != base.Colour)   // if an opp, add move and break
-                { LegalMoves.Add(new Move(X, Y, X - i, Y + i, Board)); break; }
+                { LegalMoves.Add(new Move(X, Y, X - i, Y + i, Board, 0, false)); break; }
                 else { break; }
             }
 
@@ -90,9 +90,9 @@ namespace ChessV2.Pieces
             for (int i = 1; i <= Math.Min(7 - X, 7 - Y); i++)
             {
                 if (Board[X + i, Y + i].Piece == null)  // if empty, add move
-                { LegalMoves.Add(new Move(X, Y, X + i, Y + i, Board)); }
+                { LegalMoves.Add(new Move(X, Y, X + i, Y + i, Board, 0, false)); }
                 else if (Board[X + i, Y + i].Piece.Colour != base.Colour)   // if an opp, add move and break
-                { LegalMoves.Add(new Move(X, Y, X + i, Y + i, Board)); break; }
+                { LegalMoves.Add(new Move(X, Y, X + i, Y + i, Board, 0, false)); break; }
                 else { break; }
             }
 

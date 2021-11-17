@@ -14,14 +14,17 @@ namespace ChessV2
         public (int, int) prevSquareFrom { get; set; } // field is only used for visuals so tuple fine
         public (int, int) prevSquareTo { get; set; } // field is only used for visuals so tuple fine
 
-        public Move PrevMove { get; set; }
+        public bool Check { get; set; }
+        public bool Mate { get; set; }
+        public bool Stalemate { get; set; }
 
-        private bool _check;
-        private bool _mate;
+        private int _staleMateCounter;
 
-        public bool Check { get { return _check; } set { } }
-        public bool Mate { get { return _mate; } set { } }
+        private int _repetitionCounter;
 
+        private string _stalemateType;
+
+        public List<Move> MoveList { get; set; }
         public Board()
         {
             Squares = new Square[8, 8];
@@ -34,11 +37,13 @@ namespace ChessV2
             }
             selectedSquare = null;
             DefaultPositions();
-            _check = false;
-            _mate = false;
+            Check = false;
+            Mate = false;
             checkSquare = (-1, -1);
             prevSquareFrom = (-1, -1);
             prevSquareTo = (-1, -1);
+            MoveList = new List<Move>();
+            _staleMateCounter = 0; // 50 move rule counter
         }
 
         public void DefaultPositions()
@@ -48,9 +53,10 @@ namespace ChessV2
                 Squares[x, 1].AddPiece(new Pawn(1));
                 Squares[x, 6].AddPiece(new Pawn(0));
             }
+
             // rooks
-            Squares[0, 0].AddPiece(new Rook(1)); Squares[7, 0].AddPiece(new Rook(1));
-            Squares[0, 7].AddPiece(new Rook(0)); Squares[7, 7].AddPiece(new Rook(0));
+            Squares[0, 0].AddPiece(new Rook(1, "a")); Squares[7, 0].AddPiece(new Rook(1, "h"));
+            Squares[0, 7].AddPiece(new Rook(0, "a")); Squares[7, 7].AddPiece(new Rook(0, "h"));
 
             // knights
             Squares[1, 0].AddPiece(new Knight(1)); Squares[6, 0].AddPiece(new Knight(1));
@@ -87,8 +93,15 @@ namespace ChessV2
 
         public void MovePiece(Move move)
         {
+            MoveList.Add(move);
             Square From = move.SquareFrom; Square To = move.SquareTo;
             var piece = From.Piece;
+
+            if (!move.SquareTo.ContainsPiece() && !(move.SquareFrom.Piece is Pawn)) // if move is not a taking or pawn move
+            {
+                _staleMateCounter++; // increment sstalemate counter
+            }
+
             From.RemovePiece(); To.AddPiece(piece);
 
             ClearEnPassant();
@@ -133,7 +146,12 @@ namespace ChessV2
 
             prevSquareFrom = (move.SquareFrom.File, move.SquareFrom.Rank);
             prevSquareTo = (move.SquareTo.File, move.SquareTo.Rank);
-            CheckForCheckMate(move, To);
+            CheckForCheck(move, To);
+
+            if (!Mate && _staleMateCounter == 100) // stalemate by fifty move rule
+            {
+                Stalemate = true; _stalemateType = "50 move rule";
+            }
         }
 
         public void MovePieceEnPassant(Move move, int Offset)
@@ -148,10 +166,10 @@ namespace ChessV2
             prevSquareFrom = (move.SquareFrom.File, move.SquareFrom.Rank);
             prevSquareTo = (move.SquareTo.File, move.SquareTo.Rank);
 
-            CheckForCheckMate(move, To);
+            CheckForCheck(move, To);
         }
 
-        private void CheckForCheckMate(Move move, Square To)
+        private void CheckForCheck(Move move, Square To)
         {
             // if Move results in check
             foreach (Square square in Squares)    // foreach position in the new board
@@ -162,26 +180,62 @@ namespace ChessV2
                     {
                         if ((square.Piece as King).IsInCheck(Squares, square, move.SquareTo)) // return if move puts u in check
                         {
-                            checkSquare = (square.File, square.Rank);
-                            _check = true;
-                            move.MoveName += "+";
-                            foreach (Square sq in Squares)
-                            {
-                                if (sq.ContainsPiece())
-                                {
-                                    if (sq.Piece.Colour != To.Piece.Colour)
-                                    {
-                                        sq.Piece.GenerateLegalMoves(Squares);
-                                        if (sq.Piece.LegalMoves.Count > 0)
-                                        {
-                                            _mate = false; break;
-                                        }
-                                        _mate = true;
-                                    }
-                                }
-                            }
+                            CheckForMate(move, To, square);
+                            if (Mate) { return; }
                         }
-                        else { _check = false; _mate = false; checkSquare = (-1, -1); }
+                        else // king is NOT in check => check for stalemate
+                        {
+                            CheckForStaleMate(move, To);
+                            if (Stalemate) { return; }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CheckForStaleMate(Move move, Square To)
+        {
+            Check = false; Mate = false; checkSquare = (-1, -1);
+            string _oldMoveName = move.MoveName; // get old move name
+            foreach (Square sq in Squares)  // for each square on the board
+            {
+                if (sq.ContainsPiece()) // if it has a piece
+                {
+                    if (sq.Piece.Colour != To.Piece.Colour) // if its an opp
+                    {
+                        sq.Piece.GenerateLegalMoves(Squares); // get its legal moves
+                        if (sq.Piece.LegalMoves.Count > 0)
+                        {
+                            Stalemate = false;
+                            move.MoveName = _oldMoveName; break;
+                        }
+                        Stalemate = true; move.MoveName = "1/2 - 1/2";
+                    }
+                }
+            }
+        }
+
+        private void CheckForMate(Move move, Square To, Square square)
+        {
+            checkSquare = (square.File, square.Rank);   // get square of king in check
+            Check = true;   // check lmao
+            move.MoveName += "+";   // add this to the move name
+            foreach (Square sq in Squares)  // for each square on the board
+            {
+                if (sq.ContainsPiece()) // if it has a piece
+                {
+                    if (sq.Piece.Colour != To.Piece.Colour)
+                    {
+                        sq.Piece.GenerateLegalMoves(Squares);
+                        if (sq.Piece.LegalMoves.Count > 0)
+                        {
+                            move.MoveName = move.MoveName.Substring(0, move.MoveName.Length - 1);
+                            move.MoveName += "+";
+                            Mate = false; break;
+                        }
+                        move.MoveName = move.MoveName.Substring(0, move.MoveName.Length - 1);
+                        move.MoveName += "#";
+                        Mate = true;
                     }
                 }
             }
@@ -194,6 +248,11 @@ namespace ChessV2
                 if (square.Piece is Pawn)
                 { square.Piece.CanBeEnPassant = false; }
             }
+        }
+
+        public string GetStaleMateType()
+        {
+            return _stalemateType;
         }
     }
 }

@@ -28,7 +28,7 @@ namespace ChessV2.Pieces
                             }
                             else
                             {
-                                LegalMoves.Add(new Move(X, Y, X, Y - i, Board));
+                                LegalMoves.Add(new Move(X, Y, X, Y - i, Board, 0, false));
                             }
                             if (Y != 6) { break; }
                         }
@@ -40,7 +40,7 @@ namespace ChessV2.Pieces
                             {
                                 if (Board[X - 1, Y - 1].Piece.Colour != base.Colour)
                                 {
-                                    LegalMoves.Add(new Move(X, Y, X - 1, Y - 1, Board));
+                                    LegalMoves.Add(new Move(X, Y, X - 1, Y - 1, Board, 0, false));
                                 }
                             }
                             else if (Board[X - 1, Y].Piece is Pawn) // if pawn to left
@@ -48,7 +48,7 @@ namespace ChessV2.Pieces
                                 if (Board[X - 1, Y].Piece.Colour != base.Colour && 
                                     Board[X - 1, Y].Piece.CanBeEnPassant)    // if pawn is opp and can be enpassanted
                                 {
-                                    LegalMoves.Add(new Move(X, Y, X - 1, Y - 1, Board, 1));
+                                    LegalMoves.Add(new Move(X, Y, X - 1, Y - 1, Board, 1, false));
                                 }
                             }
                         } catch { }
@@ -60,7 +60,7 @@ namespace ChessV2.Pieces
                             {
                                 if (Board[X + 1, Y - 1].Piece.Colour != base.Colour)
                                 {
-                                    LegalMoves.Add(new Move(X, Y, X + 1, Y - 1, Board));
+                                    LegalMoves.Add(new Move(X, Y, X + 1, Y - 1, Board, 0, false));
                                 }
                             }
                             else if (Board[X + 1, Y].Piece is Pawn) // if pawn to right
@@ -68,7 +68,7 @@ namespace ChessV2.Pieces
                                 if (Board[X + 1, Y].Piece.Colour != base.Colour &&
                                     Board[X + 1, Y].Piece.CanBeEnPassant)    // if pawn is opp and can be enpassanted
                                 {
-                                    LegalMoves.Add(new Move(X, Y, X + 1, Y - 1, Board, 2));
+                                    LegalMoves.Add(new Move(X, Y, X + 1, Y - 1, Board, 2, false));
                                 }
                             }
                         }
@@ -86,7 +86,7 @@ namespace ChessV2.Pieces
                             }
                             else
                             {
-                                LegalMoves.Add(new Move(X, Y, X, Y + i, Board));
+                                LegalMoves.Add(new Move(X, Y, X, Y + i, Board, 0, false));
                             }
                             if (Y != 1) { break; }
                         }
@@ -97,7 +97,7 @@ namespace ChessV2.Pieces
                             {
                                 if (Board[X - 1, Y + 1].Piece.Colour != base.Colour)
                                 {
-                                    LegalMoves.Add(new Move(X, Y, X - 1, Y + 1, Board));
+                                    LegalMoves.Add(new Move(X, Y, X - 1, Y + 1, Board, 0, false));
                                 }
                             }
                             else if (Board[X - 1, Y].Piece is Pawn) // if pawn to left
@@ -105,7 +105,7 @@ namespace ChessV2.Pieces
                                 if (Board[X - 1, Y].Piece.Colour != base.Colour &&
                                     Board[X - 1, Y].Piece.CanBeEnPassant)    // if pawn is opp and can be enpassanted
                                 {
-                                    LegalMoves.Add(new Move(X, Y, X - 1, Y + 1, Board, 1));
+                                    LegalMoves.Add(new Move(X, Y, X - 1, Y + 1, Board, 1, false));
                                 }
                             }
                         }
@@ -118,7 +118,7 @@ namespace ChessV2.Pieces
                             {
                                 if (Board[X + 1, Y + 1].Piece.Colour != base.Colour)
                                 {
-                                    LegalMoves.Add(new Move(X, Y, X + 1, Y + 1, Board));
+                                    LegalMoves.Add(new Move(X, Y, X + 1, Y + 1, Board, 0, false));
                                 }
                             }
                             else if (Board[X + 1, Y].Piece is Pawn) // if pawn to left
@@ -126,7 +126,7 @@ namespace ChessV2.Pieces
                                 if (Board[X + 1, Y].Piece.Colour != base.Colour &&
                                     Board[X + 1, Y].Piece.CanBeEnPassant)    // if pawn is opp and can be enpassanted
                                 {
-                                    LegalMoves.Add(new Move(X, Y, X + 1, Y + 1, Board, 2));
+                                    LegalMoves.Add(new Move(X, Y, X + 1, Y + 1, Board, 2, false));
                                 }
                             }
                         }

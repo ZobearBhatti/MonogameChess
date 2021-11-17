@@ -19,19 +19,7 @@ namespace ChessV2
 
         private Square[,] board;
 
-        public Move(int FileFrom, int RankFrom, int FileTo, int RankTo, Square[,] Board)
-        {
-            SquareFrom = Board[FileFrom, RankFrom];
-            SquareTo = Board[FileTo, RankTo];
-            XFrom = FileFrom; YFrom = RankFrom;
-            XTo = FileTo; YTo = RankTo;
-            EnPassantType = 0;
-            board = Board;
-            IsCastle = false;
-            MoveName = ConvertToText();
-        }
-
-        public Move(int FileFrom, int RankFrom, int FileTo, int RankTo, Square[,] Board, int enPassantType)
+        public Move(int FileFrom, int RankFrom, int FileTo, int RankTo, Square[,] Board, int enPassantType, bool isCastle)
         {
             SquareFrom = Board[FileFrom, RankFrom];
             SquareTo = Board[FileTo, RankTo];
@@ -39,28 +27,18 @@ namespace ChessV2
             XTo = FileTo; YTo = RankTo;
             EnPassantType = enPassantType;
             board = Board;
-            IsCastle = false;
-            MoveName = ConvertToText();
+            IsCastle = isCastle;
+            if (IsCastle)
+            {
+                MoveName = (FileTo < 4) ? "O-O-O" : "O-O";
+            }
+            else
+            {
+                MoveName = GenerateMoveName();
+            }
         }
 
-        public Move(int FileFrom, int RankFrom, int FileTo, int RankTo, Square[,] Board, bool temp)
-        {
-            SquareFrom = Board[FileFrom, RankFrom];
-            SquareTo = Board[FileTo, RankTo];
-            XFrom = FileFrom; YFrom = RankFrom;
-            XTo = FileTo; YTo = RankTo;
-            EnPassantType = 0;
-            board = Board;
-            IsCastle = true;
-            MoveName = (FileTo < 4) ? "O-O-O" : "O-O";
-        }
-
-        public void SimulateMove()
-        {
-
-        }
-
-        private string ConvertToText()
+        private string GenerateMoveName()
         {
             string Return = "";
 
@@ -77,7 +55,7 @@ namespace ChessV2
                 case 3:
                     Return += "N"; break;
                 case 4:
-                    Return += "R"; break;
+                    Return += "R" + (piece as Rook).RookFile; break;
                 case 5: // pawn file is only added if pawn is taking or enpassanting
                     if (SquareTo.ContainsPiece() || EnPassantType != 0)
                     {

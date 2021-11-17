@@ -20,9 +20,14 @@ namespace ChessV2.Pieces
 
         public bool CanCastle { get; set; }
 
-        public Piece(int colour)
+        public Piece(int colour)    // used normally
         {
-            Colour = colour; LegalMoves = new List<Move>(); CanCastle = false;
+            Colour = colour; LegalMoves = new List<Move>();
+        }
+
+        public Piece(int colour, string File) // used for rooks
+        {
+            Colour = colour; LegalMoves = new List<Move>();
         }
 
         public virtual void GenerateLegalMoves(Square[,] Board)

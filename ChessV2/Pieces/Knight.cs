@@ -34,7 +34,7 @@ namespace ChessV2.Pieces
                             continue;
                         }
                     }
-                    LegalMoves.Add(new Move(X, Y, X + Xo, Y + Yo, Board));
+                    LegalMoves.Add(new Move(X, Y, X + Xo, Y + Yo, Board, 0, false));
                 } else { }
             }
 

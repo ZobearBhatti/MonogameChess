@@ -34,7 +34,7 @@ namespace ChessV2.Pieces
                             continue;
                         }
                     }
-                    LegalMoves.Add(new Move(X, Y, X + Xo, Y + Yo, Board));
+                    LegalMoves.Add(new Move(X, Y, X + Xo, Y + Yo, Board, 0, false));
                 }
                 else { }
             }
@@ -78,7 +78,7 @@ namespace ChessV2.Pieces
                         else if (x == 6)
                         {
                             Board[x, Rank].RemovePiece();
-                            LegalMoves.Add(new Move(File, Rank, 6, Rank, Board, true));
+                            LegalMoves.Add(new Move(File, Rank, 6, Rank, Board, 0, true));
                         }
                     }
                 }
@@ -92,7 +92,7 @@ namespace ChessV2.Pieces
                 }
                 else if (i == 0 && Board[i, Rank].Piece is Rook && Board[i, Rank].Piece.Colour == colour && Board[Rank, i].Piece.CanCastle)
                 {
-                    LegalMoves.Add(new Move(File, Rank, 2, Rank, Board, true));
+                    LegalMoves.Add(new Move(File, Rank, 2, Rank, Board, 0, true));
                 }
             }
         }
@@ -104,56 +104,71 @@ namespace ChessV2.Pieces
             {
                 // QUEEN / ROOK MOVEMENT
                 {
-                    for (int i = X - 1; i >= 0; i--) // left
+                    if (X > 0)
                     {
-                        if (Board[i, Y].ContainsPiece()) // if square has piece
+                        for (int i = X - 1; i >= 0; i--) // left
                         {
-                            if (Board[i, Y].Piece.Colour != base.Colour
-                                && (Board[i, Y].Piece is Queen || Board[i, Y].Piece is Rook)) // if its an opp
+                            if (Board[i, Y].ContainsPiece()) // if square has piece
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[i, Y].Piece.Colour != base.Colour
+                                    && (Board[i, Y].Piece is Queen || Board[i, Y].Piece is Rook)) // if its an opp
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
+                                else { break; }
                             }
-                            else { break; }
                         }
                     }
-                    for (int i = X + 1; i < 8; i++) // right
+
+                    if (X < 7)
                     {
-                        if (Board[i, Y].ContainsPiece()) // if square has piece
+                        for (int i = X + 1; i < 8; i++) // right
                         {
-                            if (Board[i, Y].Piece.Colour != base.Colour
-                                && (Board[i, Y].Piece is Queen || Board[i, Y].Piece is Rook)) // if its an opp
+                            if (Board[i, Y].ContainsPiece()) // if square has piece
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[i, Y].Piece.Colour != base.Colour
+                                    && (Board[i, Y].Piece is Queen || Board[i, Y].Piece is Rook)) // if its an opp
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
+                                else { break; }
                             }
-                            else { break; }
                         }
                     }
-                    for (int i = Y - 1; i >= 0; i--) // up
+
+                    if (Y > 0)
                     {
-                        if (Board[X, i].ContainsPiece()) // if square has piece
+                        for (int i = Y - 1; i >= 0; i--) // up
                         {
-                            if (Board[X, i].Piece.Colour != base.Colour
-                                && (Board[X, i].Piece is Queen || Board[X, i].Piece is Rook)) // if its an opp
+                            if (Board[X, i].ContainsPiece()) // if square has piece
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X, i].Piece.Colour != base.Colour
+                                    && (Board[X, i].Piece is Queen || Board[X, i].Piece is Rook)) // if its an opp
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
+                                else { break; }
                             }
-                            else { break; }
                         }
                     }
-                    for (int i = Y + 1; i < 8; i++) // down
+
+                    if (Y < 7)
                     {
-                        if (Board[X, i].ContainsPiece()) // if square has piece
+                        for (int i = Y + 1; i < 8; i++) // down
                         {
-                            if (Board[X, i].Piece.Colour != base.Colour
-                                && (Board[X, i].Piece is Queen || Board[X, i].Piece is Rook)) // if its an opp
+                            if (Board[X, i].ContainsPiece()) // if square has piece
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X, i].Piece.Colour != base.Colour
+                                    && (Board[X, i].Piece is Queen || Board[X, i].Piece is Rook)) // if its an opp
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
+                                else { break; }
                             }
-                            else { break; }
                         }
                     }
                 }
@@ -203,62 +218,74 @@ namespace ChessV2.Pieces
                 // QUEEN / BISHOP MOVEMENT
                 {
                     // up left
-                    for (int i = 1; i <= Math.Min(X, Y); i++)
+                    if (X > 0 && Y > 0)
                     {
-                        if (Board[X - i, Y - i].ContainsPiece())
+                        for (int i = 1; i <= Math.Min(X, Y); i++)
                         {
-                            if (Board[X - i, Y - i].Piece.Colour != base.Colour
-                                && (Board[X - i, Y - i].Piece is Bishop || Board[X - i, Y - i].Piece is Queen))
+                            if (Board[X - i, Y - i].ContainsPiece())
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X - i, Y - i].Piece.Colour != base.Colour
+                                    && (Board[X - i, Y - i].Piece is Bishop || Board[X - i, Y - i].Piece is Queen))
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
 
-                    // up right
-                    for (int i = 1; i <= Math.Min(7 - X, Y); i++)
+                    if (X < 7 && Y > 0)
                     {
-                        if (Board[X + i, Y - i].ContainsPiece())
+                        // up right
+                        for (int i = 1; i <= Math.Min(7 - X, Y); i++)
                         {
-                            if (Board[X + i, Y - i].Piece.Colour != base.Colour
-                                && (Board[X + i, Y - i].Piece is Bishop || Board[X + i, Y - i].Piece is Queen))
+                            if (Board[X + i, Y - i].ContainsPiece())
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X + i, Y - i].Piece.Colour != base.Colour
+                                    && (Board[X + i, Y - i].Piece is Bishop || Board[X + i, Y - i].Piece is Queen))
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
 
-                    // down left
-                    for (int i = 1; i <= Math.Min(X, 7 - Y); i++)
+                    if (X > 0 && Y < 7)
                     {
-                        if (Board[X - i, Y + i].ContainsPiece())
+                        // down left
+                        for (int i = 1; i <= Math.Min(X, 7 - Y); i++)
                         {
-                            if (Board[X - i, Y + i].Piece.Colour != base.Colour
-                                && (Board[X - i, Y + i].Piece is Bishop || Board[X - i, Y + i].Piece is Queen))
+                            if (Board[X - i, Y + i].ContainsPiece())
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X - i, Y + i].Piece.Colour != base.Colour
+                                    && (Board[X - i, Y + i].Piece is Bishop || Board[X - i, Y + i].Piece is Queen))
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
 
-                    // down right
-                    for (int i = 1; i <= Math.Min(7 - X, 7 - Y); i++)
+                    if (X < 7 && Y < 7)
                     {
-                        if (Board[X + i, Y + i].ContainsPiece())
+                        // down right
+                        for (int i = 1; i <= Math.Min(7 - X, 7 - Y); i++)
                         {
-                            if (Board[X + i, Y + i].Piece.Colour != base.Colour
-                                && (Board[X + i, Y + i].Piece is Bishop || Board[X + i, Y + i].Piece is Queen))
+                            if (Board[X + i, Y + i].ContainsPiece())
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X + i, Y + i].Piece.Colour != base.Colour
+                                    && (Board[X + i, Y + i].Piece is Bishop || Board[X + i, Y + i].Piece is Queen))
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
                 }
