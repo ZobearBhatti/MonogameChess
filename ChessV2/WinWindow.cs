@@ -13,11 +13,13 @@ namespace ChessV2
         private string _message;
         private float _position;
         private float _timer;
+        private bool _isSM;
 
-        public WinWindow(string message, Texture2D texture, SpriteFont font)
+        public WinWindow(string message, Texture2D texture, SpriteFont font, bool IsStalemate)
         {
             _texture = texture; _message = message; _font = font;
             _position = 0f; _timer = -3f;
+            _isSM = IsStalemate;
         }
 
         public void Update(GameTime gameTime)
@@ -43,6 +45,22 @@ namespace ChessV2
             {
                 spriteBatch.Draw(_texture, new Vector2(400, _position), null, Color.White, 0f,
                     new Vector2(_texture.Width / 2, _texture.Height / 2), 1f, SpriteEffects.None, 1f);
+
+                if (_isSM)
+                {
+                    //_message = _message.Replace("Draw by", "");
+
+                    spriteBatch.DrawString(_font, "Draw by", new Vector2(400, _position - 40), Color.Black, 0f,
+                        _font.MeasureString("Draw by") / 2, 0.5f, SpriteEffects.None, 1f);
+
+                    spriteBatch.DrawString(_font, _message, new Vector2(400, _position + 40), Color.Black, 0f,
+                        _font.MeasureString(_message) / 2, 0.5f, SpriteEffects.None, 1f);
+                }
+                else
+                {
+                    spriteBatch.DrawString(_font, _message, new Vector2(400, _position), Color.Black, 0f,
+                        _font.MeasureString(_message) / 2, 0.5f, SpriteEffects.None, 1f);
+                }
             }
         }
 

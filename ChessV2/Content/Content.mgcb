@@ -98,3 +98,10 @@
 /processorParam:TextureFormat=Color
 /build:Window.png
 
+#begin WinFont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:WinFont.spritefont
+

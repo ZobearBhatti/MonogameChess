@@ -26,6 +26,7 @@ namespace ChessV2
         private Texture2D _explosionTexture;
         private Texture2D _windowTexture;
         private SpriteFont _font;
+        private SpriteFont _winFont;
         private SoundEffect _boom;
 
         private Board board;
@@ -44,6 +45,7 @@ namespace ChessV2
         private MouseState _currentMouseState;
 
         private WinWindow winWindow;
+        private PromotionWindow promWindow;
 
         #endregion
 
@@ -58,10 +60,18 @@ namespace ChessV2
 
         protected override void Initialize()
         {
-            board = new Board();
             Explosions = new List<Explosion>();
-            _moveHistory = new List<string>();
+            SetUpGame();
             base.Initialize();
+        }
+
+        private void SetUpGame()
+        {
+            board = new Board();
+            _moveHistory = new List<string>();
+            _turn = 0;
+            winWindow = null;
+            promWindow = null;
         }
 
         protected override void LoadContent()
@@ -75,6 +85,7 @@ namespace ChessV2
             _explosionTexture = Content.Load<Texture2D>("Explosion");
             _windowTexture = Content.Load<Texture2D>("Window");
             _font = Content.Load<SpriteFont>("Font");
+            _winFont = Content.Load<SpriteFont>("WinFont");
             _boom = Content.Load<SoundEffect>("Boom");
 
             Color[] color = new Color[] { _boardColor1 };
@@ -90,44 +101,78 @@ namespace ChessV2
 
         protected override void Update(GameTime gameTime)
         {
-            if (!board.Mate && !board.Stalemate) // noone die yet
+            if (!board.RequirePromotion) // input only allowed if no piece must promote
             {
-                ProcessMouse(); // does what it says on the tin
-                foreach (var Explosion in Explosions)   // update explosion/s
+                if (!board.Mate && !board.Draw) // noone die yet
                 {
-                    Explosion.Update();
-                    if (Explosion.IsDisposed)
-                    { Explosions.Remove(Explosion); break; }
-                }
-            }
-            else // someone won lmao
-            {
-                if (winWindow == null)
-                {
-                    if (board.Mate) // someone WON
+                    ProcessMouse(); // does what it says on the tin
+                    foreach (var Explosion in Explosions)   // update explosion/s
                     {
-                        winWindow = new WinWindow((((_turn == 0) ? "White" : "Black") + " Wins!"),
-                            _windowTexture, _font);
-                    }
-                    else // stalemate
-                    {
-                        winWindow = new WinWindow(("Stalemate by " + board.GetStaleMateType()),
-                            _windowTexture, _font);
+                        Explosion.Update();
+                        if (Explosion.IsDisposed)
+                        { Explosions.Remove(Explosion); break; }
                     }
                 }
-            }
+                else // someone won lmao
+                {
+                    _currentMouseState = Mouse.GetState();
+                    if (winWindow == null)
+                    {
+                        if (board.Mate) // someone WON
+                        {
+                            winWindow = new WinWindow((((_turn != 0) ? "White" : "Black") + " Wins!"),
+                                _windowTexture, _winFont, false);
+                        }
+                        else // stalemate
+                        {
+                            winWindow = new WinWindow((board.GetStaleMateType()),
+                                _windowTexture, _winFont, true);
+                            _boom.Play();
+                        }
+                    }
 
-            if (winWindow != null)
+                    if (_currentMouseState.LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released)
+                    {
+                        SetUpGame();
+                    }
+                    _prevMouseState = _currentMouseState;
+                }
+
+                if (winWindow != null)
+                {
+                    winWindow.Update(gameTime);
+                }
+            }
+            else // REQUIRE PROMOTION INPUT
             {
-                winWindow.Update(gameTime);
+                UpdatePromotion();
             }
 
             base.Update(gameTime);
         }
 
+        private void UpdatePromotion()
+        {
+            if (promWindow == null)
+            {
+                promWindow = new PromotionWindow(_pieceTexture, _turn, _boardTexture);
+            }
+            else
+            {
+                _currentMouseState = Mouse.GetState();
+                promWindow.Update(_currentMouseState);
+                if (promWindow.Choice != 4)
+                {
+                    board.Promote(promWindow.Choice, 1 - _turn);
+                    board.RequirePromotion = false;
+                    promWindow = null;
+                }
+            }
+        }
+
         private void ProcessMouse()
         {
-            _currentMouseState = Mouse.GetState();  // get current mouse state
+            _currentMouseState = Mouse.GetState();
 
             if (_currentMouseState.LeftButton == ButtonState.Pressed
                 && _prevMouseState.LeftButton == ButtonState.Released)  // he will never be clickin
@@ -218,6 +263,7 @@ namespace ChessV2
             DrawVariables();
             DrawExplosions();
             DrawWinWindow();
+            DrawPromotionWindow();
 
             // ====================================
             _spriteBatch.End();
@@ -334,7 +380,7 @@ namespace ChessV2
             //        board.Check.ToString(), new Vector2(300, 800), Color.White);
 
             _spriteBatch.DrawString(_font, "SM: " +
-                board.Stalemate.ToString(), new Vector2(300, 820), Color.White);
+                board.Draw.ToString(), new Vector2(300, 820), Color.White);
             //} 
 
             DrawMoveHistory();
@@ -379,5 +425,12 @@ namespace ChessV2
             }
         }
 
+        private void DrawPromotionWindow()
+        {
+            if (promWindow != null)
+            {
+                promWindow.Draw(_spriteBatch);
+            }
+        }
     }
 }

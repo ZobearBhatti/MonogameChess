@@ -1,6 +1,7 @@
 ﻿using ChessV2.Pieces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ChessV2
@@ -16,15 +17,18 @@ namespace ChessV2
 
         public bool Check { get; set; }
         public bool Mate { get; set; }
-        public bool Stalemate { get; set; }
+        public bool Draw { get; set; }
 
-        private int _staleMateCounter;
+        private int _fiftyMoveCounter;
 
         private int _repetitionCounter;
 
-        private string _stalemateType;
+        private string _drawType;
+
+        public bool RequirePromotion { get; set; }
 
         public List<Move> MoveList { get; set; }
+
         public Board()
         {
             Squares = new Square[8, 8];
@@ -36,17 +40,21 @@ namespace ChessV2
                 }
             }
             selectedSquare = null;
-            DefaultPositions();
             Check = false;
             Mate = false;
             checkSquare = (-1, -1);
             prevSquareFrom = (-1, -1);
             prevSquareTo = (-1, -1);
             MoveList = new List<Move>();
-            _staleMateCounter = 0; // 50 move rule counter
+            RequirePromotion = false;
+            _fiftyMoveCounter = 0; // 50 move rule counter
+
+            DefaultPositions();
+
+            //CustomPositions();
         }
 
-        public void DefaultPositions()
+        private void DefaultPositions()
         {
             for (int x = 0; x < 8; x++) // pawns
             {
@@ -70,6 +78,31 @@ namespace ChessV2
             Squares[3, 0].AddPiece(new Queen(1));   // bq
             Squares[4, 0].AddPiece(new King(1));    // bk
             Squares[3, 7].AddPiece(new Queen(0));   // wq
+            Squares[4, 7].AddPiece(new King(0));    // wk
+
+        }
+
+        private void CustomPositions()
+        {
+            Squares[1, 1].AddPiece(new Pawn(0));
+            //Squares[7, 7].AddPiece(new Knight(1));
+
+            // rooks
+            //Squares[0, 0].AddPiece(new Rook(1, "a")); Squares[7, 0].AddPiece(new Rook(1, "h"));
+            //Squares[0, 7].AddPiece(new Rook(0, "a")); Squares[3, 1].AddPiece(new Rook(0, "h"));
+
+            // knights
+            //Squares[1, 0].AddPiece(new Knight(1)); Squares[6, 0].AddPiece(new Knight(1));
+            Squares[1, 7].AddPiece(new Knight(0)); // Squares[6, 7].AddPiece(new Knight(0));
+
+            // bishops
+            //Squares[2, 0].AddPiece(new Bishop(1)); Squares[5, 0].AddPiece(new Bishop(1));
+            //Squares[2, 7].AddPiece(new Bishop(0)); Squares[5, 7].AddPiece(new Bishop(0));
+
+            // kings, queens
+            //Squares[3, 0].AddPiece(new Queen(1));   // bq
+            Squares[7, 0].AddPiece(new King(1));    // bk
+            //Squares[6, 6].AddPiece(new Queen(0));   // wq
             Squares[4, 7].AddPiece(new King(0));    // wk
 
         }
@@ -99,7 +132,7 @@ namespace ChessV2
 
             if (!move.SquareTo.ContainsPiece() && !(move.SquareFrom.Piece is Pawn)) // if move is not a taking or pawn move
             {
-                _staleMateCounter++; // increment sstalemate counter
+                _fiftyMoveCounter++; // increment sstalemate counter
             }
 
             From.RemovePiece(); To.AddPiece(piece);
@@ -116,12 +149,7 @@ namespace ChessV2
             // if piece is promoting
             else if (To.Piece is Pawn && (To.Rank == 0 || To.Rank == 7))
             {
-                int c = To.Piece.Colour;
-
-                Squares[To.File, To.Rank].RemovePiece();
-                // add queen by default === CHANGE LATER
-
-                Squares[To.File, To.Rank].AddPiece(new Queen(c));
+                RequirePromotion = true;
             }
 
             else if (To.Piece is King && move.IsCastle) // CASTLING
@@ -146,11 +174,14 @@ namespace ChessV2
 
             prevSquareFrom = (move.SquareFrom.File, move.SquareFrom.Rank);
             prevSquareTo = (move.SquareTo.File, move.SquareTo.Rank);
+
+            MoveList.Add(move);
+
             CheckForCheck(move, To);
 
-            if (!Mate && _staleMateCounter == 100) // stalemate by fifty move rule
+            if (!Mate && _fiftyMoveCounter == 100) // stalemate by fifty move rule
             {
-                Stalemate = true; _stalemateType = "50 move rule";
+                Draw = true; _drawType = "50 move rule";
             }
         }
 
@@ -167,6 +198,7 @@ namespace ChessV2
             prevSquareTo = (move.SquareTo.File, move.SquareTo.Rank);
 
             CheckForCheck(move, To);
+            MoveList.Add(move);
         }
 
         private void CheckForCheck(Move move, Square To)
@@ -186,11 +218,12 @@ namespace ChessV2
                         else // king is NOT in check => check for stalemate
                         {
                             CheckForStaleMate(move, To);
-                            if (Stalemate) { return; }
+                            if (Draw) { _drawType = "Stalemate"; return; }
                         }
                     }
                 }
             }
+            CheckForInsufficientMaterial();
         }
 
         private void CheckForStaleMate(Move move, Square To)
@@ -206,10 +239,10 @@ namespace ChessV2
                         sq.Piece.GenerateLegalMoves(Squares); // get its legal moves
                         if (sq.Piece.LegalMoves.Count > 0)
                         {
-                            Stalemate = false;
+                            Draw = false;
                             move.MoveName = _oldMoveName; break;
                         }
-                        Stalemate = true; move.MoveName = "1/2 - 1/2";
+                        Draw = true; move.MoveName = "1/2 - 1/2";
                     }
                 }
             }
@@ -241,6 +274,27 @@ namespace ChessV2
             }
         }
 
+        public void Promote(int choice, int colour)
+        {
+            int x = prevSquareTo.Item1; int y = prevSquareTo.Item2;
+
+            Squares[x, y].RemovePiece();
+
+            switch (choice)
+            {
+                case 0:
+                    Squares[x, y].AddPiece(new Queen(colour)); break;
+                case 1:
+                    Squares[x, y].AddPiece(new Bishop(colour)); break;
+                case 2:
+                    Squares[x, y].AddPiece(new Knight(colour)); break;
+                case 3:
+                    Squares[x, y].AddPiece(new Rook(colour)); break;
+            }
+
+            CheckForCheck(MoveList.Last(), MoveList.Last().SquareTo);
+        }
+
         private void ClearEnPassant()
         {
             foreach (Square square in Squares)
@@ -252,7 +306,57 @@ namespace ChessV2
 
         public string GetStaleMateType()
         {
-            return _stalemateType;
+            return _drawType;
+        }
+
+        private void CheckForInsufficientMaterial()
+        {
+            /* The possibilties for this are:
+             * BOTH sides have any of:
+             * - A lone king
+             * - A king and a bishop
+             * - A king and a knight
+             * OR one side has a king and two knights and the other has just a king
+             * if ANY pawns are in play, there is sufficient material*/
+            List<int> WhitePieces = new List<int>() { 0 };
+            List<int> BlackPieces = new List<int>() { 0 };
+
+            foreach(Square sq in Squares)
+            {
+                if (sq.ContainsPiece())
+                {
+                    if (!(sq.Piece is King))
+                    {
+                        if (sq.Piece.Colour == 0) // white
+                        {
+                            if (sq.Piece.Type == 5) { return; }
+                            WhitePieces.Add(sq.Piece.Type);
+                        }
+                        else
+                        {
+                            if (sq.Piece.Type == 5) { return; } // no pawns allowed
+                            BlackPieces.Add(sq.Piece.Type);
+                        }
+                    }
+                }
+            }   // KEEP TRACK OF EVERY PIECE ON THE BOARD
+
+            WhitePieces.Sort(); BlackPieces.Sort();
+            // every possible combination (theres not that many)
+
+            // k && 2 n against k
+            if ((Enumerable.SequenceEqual(WhitePieces, new List<int>() { 0, 3, 3 }) && BlackPieces.Count == 1) ||
+                (Enumerable.SequenceEqual(BlackPieces, new List<int>() { 0, 3, 3 }) && WhitePieces.Count == 1))
+            { Draw = true; _drawType = "Insufficient material"; return; }
+
+            if (WhitePieces.Count < 3 && BlackPieces.Count < 3) // having more than 2 pieces otherwise dont count
+            {
+                if (!(WhitePieces.Contains(1) && WhitePieces.Contains(4))
+                    && !(BlackPieces.Contains(1) && BlackPieces.Contains(4))) // if neither side has a rook or queen
+                {
+                    Draw = true; _drawType = "Insufficient material"; return;
+                }
+            }
         }
     }
 }

@@ -34,10 +34,5 @@ namespace ChessV2.Pieces
         {
             
         }
-
-        public virtual void GenerateAttacks()
-        {
-
-        }
     }
 }

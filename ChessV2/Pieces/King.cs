@@ -177,39 +177,52 @@ namespace ChessV2.Pieces
                 switch (base.Colour)
                 {
                     case 0:  // black is opps
-                        if (Board[X - 1, Y - 1].Piece is Pawn)  // left up
+                        if (X > 0)
                         {
-                            if (Board[X - 1, Y - 1].Piece.Colour != base.Colour)
+                            if (Board[X - 1, Y - 1].Piece is Pawn)  // left up
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X - 1, Y - 1].Piece.Colour != base.Colour)
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
                             }
                         }
-                        if (Board[X + 1, Y - 1].Piece is Pawn)  // right up
+                        if (X < 7)
                         {
-                            if (Board[X + 1, Y - 1].Piece.Colour != base.Colour)
+                            if (Board[X + 1, Y - 1].Piece is Pawn)  // right up
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X + 1, Y - 1].Piece.Colour != base.Colour)
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
                             }
                         }
                         break;
 
                     case 1: // white is opps
-                        if (Board[X - 1, Y + 1].Piece is Pawn)  // left down
+                        if (X > 0)
                         {
-                            if (Board[X - 1, Y + 1].Piece.Colour != base.Colour)
+                            if (Board[X - 1, Y + 1].Piece is Pawn)  // left down
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X - 1, Y + 1].Piece.Colour != base.Colour)
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
                             }
                         }
-                        if (Board[X + 1, Y + 1].Piece is Pawn)  // right down
+
+                        if (X < 7)
                         {
-                            if (Board[X + 1, Y + 1].Piece.Colour != base.Colour)
+                            if (Board[X + 1, Y + 1].Piece is Pawn)  // right down
                             {
-                                CanCastle = false;
-                                return true;
+                                if (Board[X + 1, Y + 1].Piece.Colour != base.Colour)
+                                {
+                                    CanCastle = false;
+                                    return true;
+                                }
                             }
                         }
                         break;
