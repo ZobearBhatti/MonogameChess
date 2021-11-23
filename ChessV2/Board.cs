@@ -27,7 +27,9 @@ namespace ChessV2
 
         public bool RequirePromotion { get; set; }
 
-        public List<Move> MoveList { get; set; }
+        private List<Move> MoveList { get; }
+
+        private List<Square[,]> BoardStates;
 
         public Board()
         {
@@ -46,6 +48,7 @@ namespace ChessV2
             prevSquareFrom = (-1, -1);
             prevSquareTo = (-1, -1);
             MoveList = new List<Move>();
+            BoardStates = new List<Square[,]>();
             RequirePromotion = false;
             _fiftyMoveCounter = 0; // 50 move rule counter
 
@@ -177,12 +180,15 @@ namespace ChessV2
 
             MoveList.Add(move);
 
+
             CheckForCheck(move, To);
 
-            if (!Mate && _fiftyMoveCounter == 100) // stalemate by fifty move rule
+            if (!Mate && _fiftyMoveCounter == 100) // draw by fifty move rule
             {
                 Draw = true; _drawType = "50 move rule";
             }
+
+            BoardStates.Add(Squares);
         }
 
         public void MovePieceEnPassant(Move move, int Offset)
