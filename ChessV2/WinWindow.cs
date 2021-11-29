@@ -18,7 +18,8 @@ namespace ChessV2
         public WinWindow(string message, Texture2D texture, SpriteFont font, bool IsStalemate)
         {
             _texture = texture; _message = message; _font = font;
-            _position = 0f; _timer = -3f;
+            _position = 0f;
+            _timer = 0f;
             _isSM = IsStalemate;
         }
 

@@ -1,4 +1,6 @@
 ﻿using ChessV2.Pieces;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,22 +8,87 @@ using System.Text;
 
 namespace ChessV2
 {
+    internal class AnimatingPiece
+    {
+        private Texture2D texture;
+
+        private float X;
+        private float Y;
+
+        private float XFrom;
+        private float YFrom;
+        private float XTo;
+        private float YTo;
+
+        private float timer;
+
+        private Move Move;
+
+        private int Colour;
+        private int Type;
+
+        public bool Animating { get; private set; }
+
+        public AnimatingPiece(Texture2D _texture, Move move, Piece piece)
+        {
+            texture = _texture; Move = move;
+            XFrom = move.XFrom * 100; XTo = move.XTo * 100;
+            YFrom = move.YFrom * 100; YTo = move.YTo * 100;
+            X = XFrom; Y = YFrom;
+            timer = 0f;
+            Colour = piece.Colour;
+            Type = piece.Type;
+
+            Animating = true;
+        }
+        
+        public Move GetMove()
+        {
+            return Move;
+        }
+
+
+        public void Update()
+        {
+            timer += 0.08f; // timer will represent a percentage
+
+            float t = (timer == 1) ? 1f : (float)(1 - Math.Pow(2, -10 * timer));
+
+            X = XFrom + (t * (XTo - XFrom));
+            Y = YFrom + (t * (YTo - YFrom));
+
+            if (timer >= 0.99f)
+            {
+                Animating = false;
+            }
+        }
+
+        public void Draw(SpriteBatch spriteBatch)
+        {
+            spriteBatch.Draw(texture, new Rectangle((int)X, (int)Y, 100, 100),
+                new Rectangle(Type * 200, Colour * 200, 200, 200), Color.White);
+        }
+    }
+
     public class Board
     {
-        public Square[,] Squares { get; set; }
-        public Square selectedSquare { get; set; }
 
-        public (int, int) checkSquare { get; set; } // field is only used for visuals so tuple fine
-        public (int, int) prevSquareFrom { get; set; } // field is only used for visuals so tuple fine
-        public (int, int) prevSquareTo { get; set; } // field is only used for visuals so tuple fine
+        #region Variables
+
+        private AnimatingPiece animPiece;
+        private Texture2D _texture;
+
+        public Square[,] Squares { get; set; }
+        public Square selectedSquare { get; private set; }
+        public (int, int) checkSquare { get; private set; } // field is only used for visuals so tuple fine
+        public (int, int) prevSquareFrom { get; private set; } // field is only used for visuals so tuple fine
+        public (int, int) prevSquareTo { get; private set; } // field is only used for visuals so tuple fine
 
         public bool Check { get; set; }
         public bool Mate { get; set; }
         public bool Draw { get; set; }
 
         private int _fiftyMoveCounter;
-
-        private int _repetitionCounter;
 
         private string _drawType;
 
@@ -31,8 +98,14 @@ namespace ChessV2
 
         private List<Square[,]> BoardStates;
 
-        public Board()
+        public Move prevMove { get; private set; }
+
+        #endregion
+
+        public Board(Texture2D texture)
         {
+            _texture = texture;
+            
             Squares = new Square[8, 8];
             for (int x = 0; x < 8; x++)
             {
@@ -92,11 +165,12 @@ namespace ChessV2
 
             // rooks
             //Squares[0, 0].AddPiece(new Rook(1, "a")); Squares[7, 0].AddPiece(new Rook(1, "h"));
-            //Squares[0, 7].AddPiece(new Rook(0, "a")); Squares[3, 1].AddPiece(new Rook(0, "h"));
+            //Squares[0, 2].AddPiece(new Rook(0, "a")); Squares[6, 7].AddPiece(new Rook(0, "h"));
+            //Squares[0, 1].AddPiece(new Rook(0));
 
             // knights
             //Squares[1, 0].AddPiece(new Knight(1)); Squares[6, 0].AddPiece(new Knight(1));
-            Squares[1, 7].AddPiece(new Knight(0)); // Squares[6, 7].AddPiece(new Knight(0));
+            //Squares[1, 7].AddPiece(new Knight(0)); // Squares[6, 7].AddPiece(new Knight(0));
 
             // bishops
             //Squares[2, 0].AddPiece(new Bishop(1)); Squares[5, 0].AddPiece(new Bishop(1));
@@ -104,15 +178,10 @@ namespace ChessV2
 
             // kings, queens
             //Squares[3, 0].AddPiece(new Queen(1));   // bq
-            Squares[7, 0].AddPiece(new King(1));    // bk
+            Squares[7, 1].AddPiece(new King(1));    // bk
             //Squares[6, 6].AddPiece(new Queen(0));   // wq
             Squares[4, 7].AddPiece(new King(0));    // wk
 
-        }
-
-        public Square GetSquare(int file, int rank)
-        {
-            return Squares[file, rank];
         }
 
         public void SelectSquare(int x, int y, int colour)
@@ -127,61 +196,88 @@ namespace ChessV2
             }
         }
 
+        Piece _piece; // piece
+
         public void MovePiece(Move move)
         {
-            MoveList.Add(move);
+            Check = false;
+            bool EP = (move.EnPassantType != 0) ? true : false;
+            move.SquareTo.RemovePiece();
             Square From = move.SquareFrom; Square To = move.SquareTo;
             var piece = From.Piece;
+            _piece = piece;
 
-            if (!move.SquareTo.ContainsPiece() && !(move.SquareFrom.Piece is Pawn)) // if move is not a taking or pawn move
-            {
-                _fiftyMoveCounter++; // increment sstalemate counter
-            }
-
-            From.RemovePiece(); To.AddPiece(piece);
-
-            ClearEnPassant();
-
-            // if move is a pawn jumping 2 ranks
-            if (To.Piece is Pawn &&
-                ((From.Rank == 1 && To.Rank == 3) || (From.Rank == 6 && To.Rank == 4)))
-            {
-                To.Piece.CanBeEnPassant = true;
-            }
-
-            // if piece is promoting
-            else if (To.Piece is Pawn && (To.Rank == 0 || To.Rank == 7))
-            {
-                RequirePromotion = true;
-            }
-
-            else if (To.Piece is King && move.IsCastle) // CASTLING
-            {
-                if (To.File > 4) // right side
-                {
-                    Squares[5, To.Rank].AddPiece(new Rook(To.Piece.Colour));
-                    Squares[7, To.Rank].RemovePiece();
-                }
-                else // left side
-                {
-                    Squares[3, To.Rank].AddPiece(new Rook(To.Piece.Colour));
-                    Squares[0, To.Rank].RemovePiece();
-                }
-            }
-
-            else if (To.Piece is King || To.Piece is Rook)  // if a king or pawn is moving
-            {
-                To.Piece.CanCastle = false;
-            }
-
-
+            prevMove = move;
             prevSquareFrom = (move.SquareFrom.File, move.SquareFrom.Rank);
             prevSquareTo = (move.SquareTo.File, move.SquareTo.Rank);
 
-            MoveList.Add(move);
+            if (!EP) // non enpassant moves
+            {
+                if (!move.SquareTo.ContainsPiece() && !(move.SquareFrom.Piece is Pawn)) // if move is not a taking or pawn move
+                {
+                    _fiftyMoveCounter++; // increment stalemate counter
+                }
 
+                From.RemovePiece();
 
-            CheckForCheck(move, To);
+                ClearEnPassant();
+
+                // if move is a pawn jumping 2 ranks
+                if (piece is Pawn &&
+                    ((From.Rank == 1 && To.Rank == 3) || (From.Rank == 6 && To.Rank == 4)))
+                {
+                    _piece.CanBeEnPassant = true;
+                }
+
+                // if piece is promoting
+                else if (_piece is Pawn && (To.Rank == 0 || To.Rank == 7))
+                {
+                    RequirePromotion = true;
+                }
+
+                else if (piece is King && move.IsCastle) // CASTLING
+                {
+                    if (To.File > 4) // right side
+                    {
+                        Squares[5, To.Rank].AddPiece(new Rook(_piece.Colour));
+                        Squares[7, To.Rank].RemovePiece();
+                    }
+                    else // left side
+                    {
+                        Squares[3, To.Rank].AddPiece(new Rook(piece.Colour));
+                        Squares[0, To.Rank].RemovePiece();
+                    }
+                }
+
+                else if (piece is King || piece is Rook)  // if a king or pawn is moving
+                {
+                    _piece.CanCastle = false;
+                }
+            }
+
+            else
+            {
+                From.RemovePiece(); // To.AddPiece(piece);
+                Squares[From.File + ((move.EnPassantType == 1) ? -1 : 1), From.Rank].RemovePiece();
+
+                ClearEnPassant();
+            }
+
+            //move.SquareTo.AddPiece(_piece);
+            //CheckForCheck(move, move.SquareTo);
+            //move.SquareTo.RemovePiece();
+
+            animPiece = new AnimatingPiece(_texture, move, piece);
+        }
+
+        private void AfterMove(Move move)
+        {
+            if (!RequirePromotion)
+            {
+                MoveList.Add(move); // only add the move straight away if its not promotion
+                move.SquareTo.AddPiece(_piece);
+                CheckForCheck(move, move.SquareTo);
+            }
 
             if (!Mate && _fiftyMoveCounter == 100) // draw by fifty move rule
             {
@@ -191,22 +287,6 @@ namespace ChessV2
             BoardStates.Add(Squares);
         }
 
-        public void MovePieceEnPassant(Move move, int Offset)
-        {
-            Square From = move.SquareFrom; Square To = move.SquareTo;
-            var piece = From.Piece;
-            From.RemovePiece(); To.AddPiece(piece);
-            Squares[From.File + ((Offset == 1) ? -1 : 1), From.Rank].RemovePiece();
-
-            ClearEnPassant();
-
-            prevSquareFrom = (move.SquareFrom.File, move.SquareFrom.Rank);
-            prevSquareTo = (move.SquareTo.File, move.SquareTo.Rank);
-
-            CheckForCheck(move, To);
-            MoveList.Add(move);
-        }
-
         private void CheckForCheck(Move move, Square To)
         {
             // if Move results in check
@@ -214,7 +294,7 @@ namespace ChessV2
             {
                 if (square.Piece is King)   // if square contains a king
                 {
-                    if (square.Piece.Colour == 1 - To.Piece.Colour)  // of correct colour
+                    if (square.Piece.Colour == 1 - _piece.Colour)  // of correct colour
                     {
                         if ((square.Piece as King).IsInCheck(Squares, square, move.SquareTo)) // return if move puts u in check
                         {
@@ -240,7 +320,7 @@ namespace ChessV2
             {
                 if (sq.ContainsPiece()) // if it has a piece
                 {
-                    if (sq.Piece.Colour != To.Piece.Colour) // if its an opp
+                    if (sq.Piece.Colour != _piece.Colour) // if its an opp
                     {
                         sq.Piece.GenerateLegalMoves(Squares); // get its legal moves
                         if (sq.Piece.LegalMoves.Count > 0)
@@ -263,7 +343,7 @@ namespace ChessV2
             {
                 if (sq.ContainsPiece()) // if it has a piece
                 {
-                    if (sq.Piece.Colour != To.Piece.Colour)
+                    if (sq.Piece.Colour != _piece.Colour)
                     {
                         sq.Piece.GenerateLegalMoves(Squares);
                         if (sq.Piece.LegalMoves.Count > 0)
@@ -282,6 +362,10 @@ namespace ChessV2
 
         public void Promote(int choice, int colour)
         {
+
+            prevMove.SetPromoteName(choice);
+            MoveList.Add(prevMove);
+
             int x = prevSquareTo.Item1; int y = prevSquareTo.Item2;
 
             Squares[x, y].RemovePiece();
@@ -289,16 +373,16 @@ namespace ChessV2
             switch (choice)
             {
                 case 0:
-                    Squares[x, y].AddPiece(new Queen(colour)); break;
+                    _piece = (new Queen(colour)); break;
                 case 1:
-                    Squares[x, y].AddPiece(new Bishop(colour)); break;
+                    _piece = (new Bishop(colour)); break;
                 case 2:
-                    Squares[x, y].AddPiece(new Knight(colour)); break;
+                    _piece = (new Knight(colour)); break;
                 case 3:
-                    Squares[x, y].AddPiece(new Rook(colour)); break;
+                    _piece = (new Rook(colour)); break;
             }
 
-            CheckForCheck(MoveList.Last(), MoveList.Last().SquareTo);
+            //CheckForCheck(MoveList.Last(), MoveList.Last().SquareTo);
         }
 
         private void ClearEnPassant()
@@ -310,7 +394,7 @@ namespace ChessV2
             }
         }
 
-        public string GetStaleMateType()
+        public string GetDrawType()
         {
             return _drawType;
         }
@@ -357,12 +441,38 @@ namespace ChessV2
 
             if (WhitePieces.Count < 3 && BlackPieces.Count < 3) // having more than 2 pieces otherwise dont count
             {
-                if (!(WhitePieces.Contains(1) && WhitePieces.Contains(4))
-                    && !(BlackPieces.Contains(1) && BlackPieces.Contains(4))) // if neither side has a rook or queen
+                if (!(WhitePieces.Contains(1) || WhitePieces.Contains(4))
+                    && !(BlackPieces.Contains(1) || BlackPieces.Contains(4))) // if neither side has a rook or queen
                 {
                     Draw = true; _drawType = "Insufficient material"; return;
                 }
             }
+        }
+
+        public void Update()
+        {
+            if (!(animPiece is null)) // if we actaully HAVE a piece animating
+            {
+                if (!animPiece.Animating) // if finished animating
+                {
+                    AfterMove(animPiece.GetMove());
+                    animPiece = null;
+                }
+                else
+                {
+                    animPiece.Update();
+                }
+            }
+        }
+
+        public void Animate(SpriteBatch spriteBatch)
+        {
+            animPiece.Draw(spriteBatch);
+        }
+
+        public bool IsAnimating()
+        {
+            return (animPiece != null);
         }
     }
 }

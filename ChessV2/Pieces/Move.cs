@@ -95,5 +95,20 @@ namespace ChessV2
 
             return Return;
         }
+
+        public void SetPromoteName(int choice)
+        {
+            switch(choice)
+            {
+                case 0:
+                    MoveName += "=Q"; break;
+                case 1:
+                    MoveName += "=B"; break;
+                case 2:
+                    MoveName += "=N"; break;
+                case 3:
+                    MoveName += "=R"; break;
+            }
+        }
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ChessV2
 {
@@ -14,6 +15,7 @@ namespace ChessV2
         private SpriteBatch _spriteBatch;
 
         #region Variables
+
         // Visuals
         private Color _boardColor1 = new Color(240, 217, 181);
         private Color _boardColor2 = new Color(181, 136, 99);
@@ -29,12 +31,11 @@ namespace ChessV2
         private SpriteFont _winFont;
         private SoundEffect _boom;
 
-        private Board board;
+        private Board board; // Board class, represents the board surprisingly
 
-        public int _turn; // who go it be
+        public int _turn; // whose turn it is 0-1
 
-        private List<Explosion> Explosions;
-
+        private List<Explosion> Explosions; // now that i think about it why did i make this a list
 
         // display variable
         private string _prevMove = "";
@@ -49,7 +50,7 @@ namespace ChessV2
 
         #endregion
 
-        public Game1()
+        public Game1()  // default code to initialise window
         {
             _graphics = new GraphicsDeviceManager(this);
             _graphics.PreferredBackBufferWidth = 1000;
@@ -58,25 +59,28 @@ namespace ChessV2
             IsMouseVisible = true;
         }
 
-        protected override void Initialize()
+        protected override void Initialize()    // run once upon program startup
         {
-            Explosions = new List<Explosion>();
-            SetUpGame();
+            Explosions = new List<Explosion>(); // create new list
             base.Initialize();
         }
 
         private void SetUpGame()
         {
-            board = new Board();
-            _moveHistory = new List<string>();
-            _turn = 0;
+            board = new Board(_pieceTexture);    // create new board
+            _moveHistory = new List<string>();  // reset move history
+            _turn = 0;  // white's turn
             winWindow = null;
-            promWindow = null;
+            promWindow = null;  // nul windows that dont exist just yet
+
+            _graphics.PreferredBackBufferWidth = 1000;
+            _graphics.PreferredBackBufferHeight = 1000;
+            _graphics.ApplyChanges();
         }
 
-        protected override void LoadContent()
+        protected override void LoadContent()   // method to load content from the content pipeline
         {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            _spriteBatch = new SpriteBatch(GraphicsDevice); // default code: initialise spritebatch
 
             _pieceTexture = Content.Load<Texture2D>("Pieces");
             _dotTexture = Content.Load<Texture2D>("Dot");
@@ -86,37 +90,60 @@ namespace ChessV2
             _windowTexture = Content.Load<Texture2D>("Window");
             _font = Content.Load<SpriteFont>("Font");
             _winFont = Content.Load<SpriteFont>("WinFont");
-            _boom = Content.Load<SoundEffect>("Boom");
+            _boom = Content.Load<SoundEffect>("Boom");  // load in used textures
 
-            Color[] color = new Color[] { _boardColor1 };
-            _boardTexture = new Texture2D(GraphicsDevice, 1, 1);
-            _boardTexture.SetData<Color>(color);
+            Color[] color = new Color[] { _boardColor1 };   // create 1x1 colour list used for textures
+            _boardTexture = new Texture2D(GraphicsDevice, 1, 1);    // create new empty 1x1 texture
+            _boardTexture.SetData<Color>(color);    // set list as texture's colour data
 
-            color = new Color[] { new Color(205, 210, 106) };
+            color = new Color[] { new Color(205, 210, 106) }; // repeat for second board colour
             _selectedTexture = new Texture2D(GraphicsDevice, 1, 1);
             _selectedTexture.SetData<Color>(color);
 
-
+            SetUpGame();
         }
 
-        protected override void Update(GameTime gameTime)
+        protected override void Update(GameTime gameTime)   
+            // method run once per frame, can be run multiple times before draw
         {
+            if (_moveHistory.Count > 0)
+            {
+                if (board.Mate && !_moveHistory.Last().Contains("#"))
+                {
+                    _moveHistory[_moveHistory.Count - 1] = _moveHistory.Last() + "#";
+                }
+
+                else if (board.Check && !_moveHistory.Last().Contains("+") && !_moveHistory.Last().Contains("#"))
+                {
+                    _moveHistory[_moveHistory.Count - 1] = _moveHistory.Last() + "+";
+                }
+
+                else if (board.Draw && !_moveHistory.Last().Contains("1/2 - 1/2"))
+                {
+                    _moveHistory[_moveHistory.Count - 1] = "1/2 - 1/2";
+                }
+            }
+
             if (!board.RequirePromotion) // input only allowed if no piece must promote
             {
-                if (!board.Mate && !board.Draw) // noone die yet
+                board.Update();
+
+                if (!board.Mate && !board.Draw) // IF game still in play
                 {
-                    ProcessMouse(); // does what it says on the tin
-                    foreach (var Explosion in Explosions)   // update explosion/s
+                    ProcessMouse(); // process mouse input / move logic
+
+                    // update explosion/s
+                    foreach (var Explosion in Explosions)   // for each explosion that needs to be updated
                     {
-                        Explosion.Update();
-                        if (Explosion.IsDisposed)
-                        { Explosions.Remove(Explosion); break; }
+                        Explosion.Update(); // update it
+                        if (Explosion.IsDisposed)   // if explosion is finished:
+                        { Explosions.Remove(Explosion); break; } // remove from list
                     }
                 }
-                else // someone won lmao
+                else // Mate / Stalemate
                 {
-                    _currentMouseState = Mouse.GetState();
-                    if (winWindow == null)
+                    _currentMouseState = Mouse.GetState(); // get mouse data
+                    if (winWindow == null)  // if no window popup has been created, create one with the relevant message
                     {
                         if (board.Mate) // someone WON
                         {
@@ -125,22 +152,25 @@ namespace ChessV2
                         }
                         else // stalemate
                         {
-                            winWindow = new WinWindow((board.GetStaleMateType()),
+                            winWindow = new WinWindow((board.GetDrawType()),
                                 _windowTexture, _winFont, true);
-                            _boom.Play();
+
+                            _boom.Play(); // funny vine boom sound effect plays on stalemate
                         }
                     }
 
                     if (_currentMouseState.LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released)
+                        // "if mouse has just been clicked"
                     {
-                        SetUpGame();
+                        SetUpGame();    // reset the game
                     }
-                    _prevMouseState = _currentMouseState;
+                    _prevMouseState = _currentMouseState;   /* get previous mouse state, used so program knows if mouse 
+                                                             is DOWN or if mouse has just been CLICKED */
                 }
 
-                if (winWindow != null)
+                if (winWindow != null)  // if window has been initialised
                 {
-                    winWindow.Update(gameTime);
+                    winWindow.Update(gameTime); // update window
                 }
             }
             else // REQUIRE PROMOTION INPUT
@@ -151,67 +181,75 @@ namespace ChessV2
             base.Update(gameTime);
         }
 
-        private void UpdatePromotion()
+        private void UpdatePromotion()  // method to update promotion window
         {
-            if (promWindow == null)
+            if (promWindow == null) // if window has not been initialised
             {
-                promWindow = new PromotionWindow(_pieceTexture, _turn, _boardTexture);
+                promWindow = new PromotionWindow(_pieceTexture, _turn, _boardTexture); // create new window
             }
-            else
+            else // window already exists
             {
-                _currentMouseState = Mouse.GetState();
-                promWindow.Update(_currentMouseState);
-                if (promWindow.Choice != 4)
+                _currentMouseState = Mouse.GetState(); // get mouse data
+                promWindow.Update(_currentMouseState);  // update window
+                if (promWindow.Choice != 4) // if user has selected a piece
                 {
-                    board.Promote(promWindow.Choice, 1 - _turn);
-                    board.RequirePromotion = false;
-                    promWindow = null;
+                    board.Promote(promWindow.Choice, 1 - _turn);    // tell board to promote the pawn with the selection
+                    board.RequirePromotion = false; // game no longer needs promotion input
+                    promWindow = null;  // remove promotion window
+
+                    _moveHistory[_moveHistory.Count - 1] = board.prevMove.MoveName;
                 }
             }
         }
 
-        private void ProcessMouse()
+        private void ProcessMouse() // method to process mouse input when selecting / moving pieces
         {
-            _currentMouseState = Mouse.GetState();
+            _currentMouseState = Mouse.GetState();  // get mouse data from current frame
 
             if (_currentMouseState.LeftButton == ButtonState.Pressed
-                && _prevMouseState.LeftButton == ButtonState.Released)  // he will never be clickin
+                && _prevMouseState.LeftButton == ButtonState.Released)  // "on click"
             {
                 int X = (int)_currentMouseState.X / 100;
-                int Y = (int)_currentMouseState.Y / 100;    // get x/y positions of mouse on board
+                int Y = (int)_currentMouseState.Y / 100;    // get x/y positions of mouse on board, 0-8, 0-8
+
                 if (board.selectedSquare != null)   // if you have selected a piece before
                 {
-                    if (X >= 0 && X < 8 && Y >= 0 && Y < 8)
+                    if (X >= 0 && X < 8 && Y >= 0 && Y < 8) // in bounds check
                     {
-                        if (board.Squares[X, Y].ContainsPiece())
+                        if (board.Squares[X, Y].ContainsPiece()) // if board contains a piece 
                         {
-                            if (board.Squares[X, Y].Piece.Colour == _turn)
-                            { TrySelect(X, Y); }
+                            if (board.Squares[X, Y].Piece.Colour == _turn)  // if piece is your colour
+                            {
+                                TrySelect(X, Y);
+                            }    // try to select it
+
                             else
-                            { TryMove(X, Y); }
+                            {
+                                TryMove(X, Y); // try to move onto that square
+                            }
                         }
-                        else { TryMove(X, Y); }
+                        else { TryMove(X, Y); } // if square doesnt contain a piece, just try moving to it
                     }
                 }
-                else
+                else // if you havent selected a piece, try selecting the square you clicked on
                 {
                     TrySelect(X, Y);
                 }
             }
 
-            _prevMouseState = _currentMouseState;
+            _prevMouseState = _currentMouseState;   // set current mouse data as "previous" mouse data used next frame
         }
 
-        private void TrySelect(int X, int Y)
+        private void TrySelect(int X, int Y)    // method to try selecting a piece
         {
-            try
+            try // it tries
             {
-                board.SelectSquare(X, Y, _turn);
+                board.SelectSquare(X, Y, _turn);    // to select a piece
             }
             catch { }
         }
 
-        private void TryMove(int X, int Y)
+        private void TryMove(int X, int Y)  // method to "try" moving a piece
         {
             // if a piece is selected and move is on board
             if (board.selectedSquare.ContainsPiece() && X >= 0 && X < 8 && Y >= 0 && Y < 8)
@@ -222,23 +260,24 @@ namespace ChessV2
                     {
                         if (move.EnPassantType != 0) // if move is enpassant
                         {
-                            board.MovePieceEnPassant(move, move.EnPassantType);
-                            _turn = 1 - _turn;
-                            _prevMove = move.MoveName;
-                            _moveHistory.Add(_prevMove);
-                            Explosions.Add(new Explosion(_explosionTexture, 
+                            board.MovePiece(move); // move enpassant
+                            _turn = 1 - _turn;  // switch turn from 1-0 or vice versa
+                            _prevMove = move.MoveName;  // get name of move that was just made
+                            _moveHistory.Add(_prevMove);    // add to list of moves
+
+                            Explosions.Add(new Explosion(_explosionTexture, // add a little explosion when en passanting
                                 move.XFrom + ((move.EnPassantType == 1) ? -1 : 1), move.YFrom));
 
-                            _boom.Play();
+                            _boom.Play();   // play funny vine boom sound effect
 
                             break;
                         }
                         else // if move not enpassant
                         {
                             board.MovePiece(move); // move
-                            _turn = 1 - _turn;
-                            _prevMove = move.MoveName;
-                            _moveHistory.Add(_prevMove);
+                            _turn = 1 - _turn;  // switch turn
+                            _prevMove = move.MoveName;  // get move name
+                            _moveHistory.Add(_prevMove);    // add move name to list
                             break;
                         }
                     }
@@ -246,12 +285,11 @@ namespace ChessV2
             }
         }
 
-        protected override void Draw(GameTime gameTime)
+        protected override void Draw(GameTime gameTime) // method to render visuals
         {
-            GraphicsDevice.Clear(_boardColor2);
+            GraphicsDevice.Clear(_boardColor2); // set window colour
 
-            _spriteBatch.Begin();
-            // ====================================
+            _spriteBatch.Begin();   // begin spritebatch
 
             // does what it says on the tin tbh
             DrawSquares();
@@ -265,8 +303,7 @@ namespace ChessV2
             DrawWinWindow();
             DrawPromotionWindow();
 
-            // ====================================
-            _spriteBatch.End();
+            _spriteBatch.End(); // end spritebatch, render
 
             base.Draw(gameTime);
         }
@@ -284,14 +321,14 @@ namespace ChessV2
                     }   
                 }
             }
-            _spriteBatch.Draw(_squaresTexture, Vector2.Zero, Color.White);
+            _spriteBatch.Draw(_squaresTexture, Vector2.Zero, Color.White); // draw texture of letters/numbers
         }
 
         private void DrawSelectedPiece()    // method to highlight selected piece
         {
             if (board.selectedSquare != null)   // if a square has been selected
             {
-                var x = board.selectedSquare.File;
+                var x = board.selectedSquare.File; // get file/rank of selected square
                 var y = board.selectedSquare.Rank;
                 _spriteBatch.Draw(_selectedTexture, new Rectangle(x * 100, y * 100, 100, 100),
                 Color.DarkOliveGreen);  // highlight selected piece
@@ -304,12 +341,13 @@ namespace ChessV2
             // draw red square
         }
 
-        public void DrawPrevMove()
+        public void DrawPrevMove()  // draw green squares on the previous move ala chess.com
         {
-            (int XF, int YF) = board.prevSquareFrom;
+            (int XF, int YF) = board.prevSquareFrom;    // get positions of from/to squares of last move
             (int XT, int YT) = board.prevSquareTo;
             _spriteBatch.Draw(_selectedTexture, new Rectangle(XF * 100, YF * 100, 100, 100), Color.White);
             _spriteBatch.Draw(_selectedTexture, new Rectangle(XT * 100, YT * 100, 100, 100), Color.White);
+            // draw squares
         }
 
         private void DrawLegalMoves()  // method to draw legal moves for selected piece
@@ -335,7 +373,7 @@ namespace ChessV2
             }
         }
 
-        private void DrawPieces()   // method to draw eac hpiece present on the board
+        private void DrawPieces()   // method to draw each piece present on the board
         {   
             foreach(Square square in board.Squares) // for every position on the board
             {
@@ -349,63 +387,45 @@ namespace ChessV2
                     // draw piece
                 }
             }
+
+            if (board.IsAnimating())
+            {
+                board.Animate(_spriteBatch);
+            }
         }
 
         private void DrawVariables()
         {
-            // OLD
-            //{
-            //    if (board.selectedSquare != null)
-            //    {
-            //        if (board.selectedSquare.ContainsPiece())
-            //        {
-
-            //            _spriteBatch.DrawString(_font, "File: " +
-            //                board.selectedSquare.Piece.File.ToString(), new Vector2(0, 820), Color.White);
-
-            //            _spriteBatch.DrawString(_font, "Rank: " +
-            //                board.selectedSquare.Piece.Rank.ToString(), new Vector2(0, 840), Color.White);
-
-            //            _spriteBatch.DrawString(_font, "CBEP: " +
-            //                board.selectedSquare.Piece.CanBeEnPassant.ToString(), new Vector2(0, 860), Color.White);
-
-            //            _spriteBatch.DrawString(_font, "Can Castle: " +
-            //                board.selectedSquare.Piece.CanCastle.ToString(), new Vector2(300, 880), Color.White);
-            //        }
-            //    }
-            //    _spriteBatch.DrawString(_font, "Prev Move: " +
-            //        _prevMove, new Vector2(0, 880), Color.White);
-
-            //    _spriteBatch.DrawString(_font, "Check: " +
-            //        board.Check.ToString(), new Vector2(300, 800), Color.White);
 
             _spriteBatch.DrawString(_font, "SM: " +
                 board.Draw.ToString(), new Vector2(300, 820), Color.White);
-            //} 
 
             DrawMoveHistory();
         }
 
-        private void DrawMoveHistory()
+        private void DrawMoveHistory() // draws move history
         {
-            int W = _graphics.PreferredBackBufferWidth;
+            int W = _graphics.PreferredBackBufferWidth; // get W/H of window
             int H = _graphics.PreferredBackBufferHeight;
 
             int x = _moveHistory.Count / 66; // 66 moves displayed on each column
 
-            while (W < (1000) + (x * 200))
+            while (W < (1000) + (x * 200))  // if window is too thin to display every move, make it wider
             {
                 _graphics.PreferredBackBufferWidth += 200;
                 _graphics.ApplyChanges();
                 W = _graphics.PreferredBackBufferWidth;
             }
 
-            for (int i = 0; i < _moveHistory.Count; i++)
+            for (int i = 0; i < _moveHistory.Count; i++)    // for every move in move history
             {
                 _spriteBatch.DrawString(_font, _moveHistory[i], new Vector2(
                     810 + ((i / 66) * 200) + ((i % 2) * 90),
                     ((i % 66) / 2) * 30),
-                    (i % 2 == 0) ? Color.White : Color.Black); // color line
+                    (i % 2 == 0) ? Color.White : Color.Black);
+
+                // draw the text of the move name, white and black are coloured properly,
+                // if text would go too far down, it loops back up and is positioned further to the right
             }
         }
 

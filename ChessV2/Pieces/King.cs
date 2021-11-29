@@ -80,10 +80,14 @@ namespace ChessV2.Pieces
                             Board[x, Rank].RemovePiece();
                             LegalMoves.Add(new Move(File, Rank, 6, Rank, Board, 0, true));
                         }
+                        else
+                        {
+                            Board[x, Rank].RemovePiece();
+                        }
                     }
                 }
             }
-            for (int i = File - 1; i >= 0; i--) // right
+            for (int i = File - 1; i >= 0; i--) // left
             {
                 // check no space between king and castle
                 if (Board[i, Rank].ContainsPiece() && i != 0) // if piece between king/rook, break
@@ -177,7 +181,7 @@ namespace ChessV2.Pieces
                 switch (base.Colour)
                 {
                     case 0:  // black is opps
-                        if (X > 0)
+                        if (X > 0 && Y > 1)
                         {
                             if (Board[X - 1, Y - 1].Piece is Pawn)  // left up
                             {
@@ -188,7 +192,7 @@ namespace ChessV2.Pieces
                                 }
                             }
                         }
-                        if (X < 7)
+                        if (X < 7 && Y > 1)
                         {
                             if (Board[X + 1, Y - 1].Piece is Pawn)  // right up
                             {
@@ -202,7 +206,7 @@ namespace ChessV2.Pieces
                         break;
 
                     case 1: // white is opps
-                        if (X > 0)
+                        if (X > 0 && Y < 6)
                         {
                             if (Board[X - 1, Y + 1].Piece is Pawn)  // left down
                             {
@@ -214,7 +218,7 @@ namespace ChessV2.Pieces
                             }
                         }
 
-                        if (X < 7)
+                        if (X < 7 && Y < 6)
                         {
                             if (Board[X + 1, Y + 1].Piece is Pawn)  // right down
                             {
